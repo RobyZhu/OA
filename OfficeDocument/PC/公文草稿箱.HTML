@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>公文草稿箱</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="shortcut icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 120 120'%3E%3Cstyle%3E.primary%7Bfill:%234080FF%7D.secondary%7Bfill:%233060DD%7D%3C/style%3E%3Ccircle cx='60' cy='60' r='52' fill='%23e6f4ff'/%3E%3Cpath class='primary' d='M60 20C37.9 20 20 37.9 20 60c0 22.1 17.9 40 40 40V80c-11 0-20-9-20-20s9-20 20-20V20z'/%3E%3Cpath class='secondary' d='M80 60c0 11-9 20-20 20v20c22.1 0 40-17.9 40-40S82.1 20 60 20v20c11 0 20 9 20 20z'/%3E%3Cpath class='primary' d='M60 40l-10 30h20z'/%3E%3C/svg%3E" type="image/svg+xml">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--background-color);
+            min-height: 100vh;
+        }
+        
+        /* 添加 index.html 头部样式 */
+        .top-header {
+            height: var(--header-height, 60px);
+            background: linear-gradient(135deg, #4080FF 0%, #3060DD 100%);
+            box-shadow: 0 2px 10px rgba(64, 128, 255, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 24px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+        
+        .header-left .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .header-left .logo svg {
+            width: 32px;
+            height: 32px;
+            margin-right: 10px;
+        }
+        
+        .header-left .logo h2 {
+            font-size: 18px;
+            font-weight: 500;
+            color: white;
+            margin: 0;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 5px 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            color: white;
+        }
+        
+        .user-info:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            overflow: hidden;
+            background-color: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .avatar svg {
+            width: 32px;
+            height: 32px;
+        }
+        
+        .username {
+            font-size: 14px;
+            font-weight: 500;
+            color: white;
+        }
+        
+        /* 原有样式调整 */
+        .frame-container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 80px);
+            padding: 16px;
+            box-sizing: border-box;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            color: var(--secondary-color);
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+        
+        .back-link:hover {
+            color: var(--primary-color);
+        }
+        
+        .back-link i {
+            margin-right: 6px;
+            font-size: 12px;
+        }
+        
+        .page-title {
+            font-size: 22px;
+            font-weight: 500;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+        }
+        
+        .page-title i {
+            margin-right: 10px;
+            color: var(--primary-color);
+        }
+        
+        .list-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            padding: 16px;
+            overflow: hidden;
+        }
+        
+        .doc-list {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed; /* 确保列宽固定 */
+        }
+        
+        .doc-list th, .doc-list td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        /* 定义固定列宽 */
+        .doc-list th:first-child, .doc-list td:first-child {
+            width: 40px;
+            min-width: 40px;
+            padding: 10px 5px;
+            text-align: center;
+        }
+        
+        .doc-list th.narrow-column {
+            width: 70px; /* 序号列宽增加到70px */
+            min-width: 70px;
+            white-space: nowrap;
+        }
+        
+        .doc-list th.doc-title-column {
+            width: auto; /* 标题列自适应 */
+            min-width: 250px;
+        }
+        
+        .doc-list th.doc-type-column {
+            width: 100px;
+            min-width: 100px;
+        }
+        
+        .doc-list th.update-time-column {
+            width: 140px;
+            min-width: 140px;
+        }
+        
+        .doc-list th.actions-column {
+            width: 80px;
+            min-width: 80px;
+        }
+        
+        .doc-list .doc-title {
+            display: flex;
+            align-items: center;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .doc-list .doc-title .title-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+        }
+        
+        .doc-list .security-tag {
+            margin-left: 8px;
+            flex-shrink: 0;
+        }
+        
+        .bottom-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .pagination {
+            display: flex;
+            align-items: center;
+        }
+        
+        .pagination-controls {
+            display: flex;
+            margin-left: 16px;
+        }
+        
+        .pagination-controls button {
+            margin: 0 4px;
+            border: 1px solid var(--border-color);
+            background: white;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        
+        .pagination-controls button.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        /* 表头居中显示 */
+        .doc-list th {
+            text-align: center;
+            white-space: normal; /* 允许表头文字换行 */
+            height: 46px; /* 确保有足够的高度显示两行文字 */
+            vertical-align: middle;
+        }
+        
+        /* 表格单元格保持左对齐 */
+        .doc-list td {
+            text-align: left;
+        }
+        
+        /* 优化表头排序样式 */
+        th[data-sort] {
+            cursor: pointer;
+            position: relative;
+        }
+        
+        th[data-sort]:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        th[data-sort]::after {
+            content: "";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            margin-left: 5px;
+            display: inline-block;
+            width: 14px;
+        }
+        
+        th[data-sort="asc"]::after {
+            content: "\f0de"; /* 使用Font Awesome上箭头 */
+            color: var(--primary-color);
+        }
+        
+        th[data-sort="desc"]::after {
+            content: "\f0dd"; /* 使用Font Awesome下箭头 */
+            color: var(--primary-color);
+        }
+        
+        /* 编辑按钮样式 */
+        .btn-edit {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 10px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 4px;
+            font-size: 13px;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+        
+        .btn-edit:hover {
+            background-color: var(--primary-hover, #5590FF);
+        }
+        
+        @media (max-width: 992px) {
+            .frame-container {
+                padding: 12px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .doc-list th.update-time-column,
+            .doc-list td:nth-child(5) {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .doc-list th.doc-type-column,
+            .doc-list td:nth-child(4) {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 添加头部 -->
+    <header class="top-header">
+        <div class="header-left">
+            <div class="logo">
+                <svg width="32" height="32" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                    <style>
+                        .primary { fill: #4080FF; }
+                        .secondary { fill: #3060DD; }
+                    </style>
+                    <circle cx="60" cy="60" r="52" fill="#e6f4ff" />
+                    <path class="primary" d="M60 20 C37.909 20 20 37.909 20 60 C20 82.091 37.909 100 60 100 L60 80 C48.954 80 40 71.046 40 60 C40 48.954 48.954 40 60 40 L60 20 Z" />
+                    <path class="secondary" d="M80 60 C80 71.046 71.046 80 60 80 L60 100 C82.091 100 100 82.091 100 60 C100 37.909 82.091 20 60 20 L60 40 C71.046 40 80 48.954 80 60 Z" />
+                    <path class="primary" d="M60,40 L50,70 L70,70 Z" />
+                </svg>
+                <a href="index.html"><h2>公文审批系统</h2></a>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="user-info">
+                <span class="avatar">
+                    <svg width="32" height="32" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="60" cy="60" r="60" fill="#e6f4ff"/>
+                        <circle cx="60" cy="45" r="20" fill="#4080FF"/>
+                        <path d="M60,75 C40,75 25,90 25,110 L95,110 C95,90 80,75 60,75 Z" fill="#4080FF"/>
+                    </svg>
+                </span>
+                <span class="username">易航科技</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="frame-container">
+        <!-- 顶部栏 - 包含标题和返回按钮 -->
+        <div class="top-bar">
+            <a href="index.html" class="back-link">
+                <i class="fas fa-arrow-left"></i> 返回首页
+            </a>
+            <div class="page-title">
+                <i class="fas fa-inbox"></i>
+                <span>公文草稿箱</span>
+            </div>
+        </div>
+
+        <!-- 文档列表容器 -->
+        <div class="list-container">
+            <table class="doc-list">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="select-all" class="select-all"></th>
+                        <th class="narrow-column" data-sort>序号</th>
+                        <th class="doc-title-column" data-sort>公文标题</th>
+                        <th class="doc-type-column" data-sort>公文类型</th>
+                        <th class="update-time-column" data-sort>修改时间</th>
+                        <th class="actions-column">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>1</td>
+                        <td class="doc-title-column">
+                            <span class="title-text">关于张明的休假申请</span>
+                            <div class="security-tag normal" data-serial="23456789012345"></div>
+                        </td>
+                        <td>休假申请</td>
+                        <td>2023-04-18 10:30</td>
+                        <td class="actions">
+                            <a href="编辑草稿.HTML" target="_blank" class="btn-edit primary">编辑</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>2</td>
+                        <td class="doc-title-column">
+                            <span class="title-text">关于办公设备更新采购计划及预算评估报告</span>
+                        </td>
+                        <td>报告</td>
+                        <td>2023-04-19 14:45</td>
+                        <td class="actions">
+                            <a href="#" class="btn-edit primary">编辑</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>3</td>
+                        <td class="doc-title-column">
+                            <span class="title-text">关于王强的休假申请</span>
+                            <div class="security-tag normal" data-serial="34567890123456"></div>
+                        </td>
+                        <td>休假申请</td>
+                        <td>2023-04-20 09:15</td>
+                        <td class="actions">
+                            <a href="编辑草稿.HTML" target="_blank" class="btn-edit primary">编辑</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>4</td>
+                        <td class="doc-title-column">
+                            <span class="title-text">IT系统安全升级方案及风险评估分析报告</span>
+                        </td>
+                        <td>方案</td>
+                        <td>2023-04-21 16:20</td>
+                        <td class="actions">
+                            <a href="#" class="btn-edit primary">编辑</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>5</td>
+                        <td class="doc-title-column">
+                            <span class="title-text">市场部第二季度营销活动策划及效果分析总结</span>
+                        </td>
+                        <td>总结报告</td>
+                        <td>2023-04-22 11:30</td>
+                        <td class="actions">
+                            <a href="#" class="btn-edit primary">编辑</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>6</td>
+                        <td class="doc-title-column">
+                            <span class="title-text">市场部第三季度营销活动策划及效果分析总结</span>
+                        </td>
+                        <td>总结报告</td>
+                        <td>2023-04-22 11:30</td>
+                        <td class="actions">
+                            <a href="#" class="btn-edit primary">编辑</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>7</td>
+                        <td class="doc-title-column">
+                            <span class="title-text">市场部第四季度营销活动策划及效果分析总结</span>
+                        </td>
+                        <td>总结报告</td>
+                        <td>2023-04-22 11:30</td>
+                        <td class="actions">
+                            <a href="#" class="btn-edit primary">编辑</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 底部栏 - 分页 -->
+        <div class="bottom-bar">
+            <div></div>
+            <div class="pagination">
+                <span>第1页，共1页，共7条记录</span>
+                <div class="pagination-controls">
+                    <button><i class="fas fa-angle-left"></i></button>
+                    <button class="active">1</button>
+                    <button><i class="fas fa-angle-right"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <!-- 添加排序功能的JavaScript -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 获取所有可排序的表头
+        const sortableHeaders = document.querySelectorAll('th[data-sort]');
+        
+        // 为每个可排序表头添加点击事件
+        sortableHeaders.forEach(header => {
+            header.addEventListener('click', function() {
+                // 清除其他表头的排序状态
+                sortableHeaders.forEach(h => {
+                    if (h !== header) {
+                        h.removeAttribute('data-sort');
+                        h.setAttribute('data-sort', '');
+                    }
+                });
+                
+                // 切换当前表头的排序状态
+                if (!this.getAttribute('data-sort') || this.getAttribute('data-sort') === '') {
+                    this.setAttribute('data-sort', 'asc');
+                } else if (this.getAttribute('data-sort') === 'asc') {
+                    this.setAttribute('data-sort', 'desc');
+                } else {
+                    this.setAttribute('data-sort', '');
+                }
+                
+                // 实际排序逻辑可以在这里添加
+                sortTable(header.cellIndex, header.getAttribute('data-sort'));
+            });
+        });
+        
+        // 表格排序函数
+        function sortTable(columnIndex, direction) {
+            if (direction === '') return; // 如果没有排序方向，不执行排序
+            
+            const table = document.querySelector('.doc-list');
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            // 排序行
+            rows.sort((a, b) => {
+                const aValue = a.cells[columnIndex].textContent.trim();
+                const bValue = b.cells[columnIndex].textContent.trim();
+                
+                if (direction === 'asc') {
+                    return aValue.localeCompare(bValue, 'zh-CN');
+                } else {
+                    return bValue.localeCompare(aValue, 'zh-CN');
+                }
+            });
+            
+            // 重新添加排序后的行
+            rows.forEach(row => tbody.appendChild(row));
+        }
+    });
+    </script>
+</body>
+</html> 

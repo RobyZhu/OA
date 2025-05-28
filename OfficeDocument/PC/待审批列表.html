@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>待审批公文列表</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--background-color);
+            overflow: hidden;
+        }
+        
+        .frame-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 16px;
+            box-sizing: border-box;
+        }
+        
+       
+        
+        .list-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .doc-list {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed; /* 确保列宽固定 */
+        }
+        
+        .doc-list th, .doc-list td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        /* 定义固定列宽 */
+        .doc-list th:first-child, .doc-list td:first-child {
+            width: 40px;
+            min-width: 40px;
+            padding: 10px 5px;
+            text-align: center;
+        }
+        
+        .doc-list th.narrow-column {
+            width: 70px; /* 序号列宽增加到70px */
+            min-width: 70px;
+            white-space: nowrap;
+        }
+        
+        .doc-list th.doc-number-column {
+            width: 130px;
+            min-width: 130px;
+        }
+        
+        .doc-list th.doc-title-column {
+            width: auto; /* 标题列自适应 */
+            min-width: 250px;
+        }
+        
+        .doc-list th.reporter-column {
+            width: 90px;
+            min-width: 90px;
+        }
+        
+        .doc-list th.department-column {
+            width: 140px;
+            min-width: 140px;
+        }
+        
+        .doc-list th.deadline-column {
+            width: 140px;
+            min-width: 140px;
+        }
+        
+        .doc-list th.urgency-column {
+            width: 110px; /* 增加宽度，确保"特急件"完整显示 */
+            min-width: 110px;
+        }
+        
+        .doc-list th.actions-column {
+            width: 110px;
+            min-width: 110px;
+        }
+        
+        .doc-list th.doc-type-column {
+            width: 100px;
+            min-width: 100px;
+        }
+        
+        .doc-list .doc-title {
+            display: flex;
+            align-items: center;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .doc-list .doc-title .title-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+        }
+        
+        .doc-list .security-tag {
+            margin-left: 8px;
+            flex-shrink: 0;
+        }
+        
+        .bottom-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .pagination {
+            display: flex;
+            align-items: center;
+        }
+        
+        .pagination-controls {
+            display: flex;
+            margin-left: 16px;
+        }
+        
+        .pagination-controls button {
+            margin: 0 4px;
+            border: 1px solid var(--border-color);
+            background: white;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        
+        .pagination-controls button.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        /* 表头居中显示 */
+        .doc-list th {
+            text-align: center;
+            white-space: normal; /* 允许表头文字换行 */
+            height: 46px; /* 确保有足够的高度显示两行文字 */
+            vertical-align: middle;
+        }
+        
+        /* 表格单元格保持左对齐 */
+        .doc-list td {
+            text-align: left;
+        }
+        
+        /* 优化表头排序样式 */
+        th[data-sort] {
+            cursor: pointer;
+            position: relative;
+        }
+        
+        th[data-sort]:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        th[data-sort]::after {
+            content: "";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            margin-left: 5px;
+            display: inline-block;
+            width: 14px;
+        }
+        
+        th[data-sort="asc"]::after {
+            content: "\f0de"; /* 使用Font Awesome上箭头 */
+            color: var(--primary-color);
+        }
+        
+        th[data-sort="desc"]::after {
+            content: "\f0dd"; /* 使用Font Awesome下箭头 */
+            color: var(--primary-color);
+        }
+        
+        /* 移除紧急程度单元格的文本截断效果 */
+        .doc-list td .urgent,
+        .doc-list td .normal {
+            white-space: nowrap;
+            overflow: visible; /* 允许内容溢出而不截断 */
+            text-overflow: initial; /* 不使用省略号 */
+        }
+    </style>
+</head>
+<body>
+    <div class="frame-container">
+        <!-- 文档列表容器 -->
+        <div class="list-container">
+            <table class="doc-list">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="select-all" class="select-all"></th>
+                        <th class="narrow-column" data-sort>序号</th>
+                        <th class="doc-title-column" data-sort>公文标题</th>
+                        <th class="doc-type-column" data-sort>公文类型</th>
+                        <th class="reporter-column" data-sort>呈报人</th>
+                        <th class="department-column" data-sort>呈报单位</th>
+                        <th class="deadline-column" data-sort>审核时限</th>
+                        <th class="urgency-column" data-sort>紧急程度</th>
+                        <th class="actions-column">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>1</td>
+                        <td class="doc-title-column">
+                            <span class="title-text">关于张明年休假的请示</span>
+                            <div class="security-tag important" data-serial="12345678901234"></div>
+                        </td>
+                        <td>休假申请单</td>
+                        <td><span class="user-tag"><i class="fas fa-user"></i> 张明</span></td>
+                        <td>XX公司信息技术部</td>
+                        <td class="deadline urgent-deadline">2025-04-18 18:00</td>
+                        <td><span class="urgent"><i class="fas fa-exclamation-circle"></i> 特急件</span></td>
+                        <td class="actions">
+                            <a href="公文审批.HTML" target="_blank" class="btn-review primary">审批</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>2</td>
+                        <td class="doc-title-column">
+                            <span class="title-text">关于组织年度员工培训与职业发展规划实施方案的报告</span>
+                            <div class="security-tag normal" data-serial="23456789012345"></div>
+                        </td>
+                        <td>发文稿纸</td>
+                        <td><span class="user-tag"><i class="fas fa-user"></i> 李华</span></td>
+                        <td>XX公司信息技术部</td>
+                        <td class="deadline">2025-04-20 18:00</td>
+                        <td><span class="normal"><i class="fas fa-circle"></i> 普通</span></td>
+                        <td class="actions">
+                            <a href="#" class="btn-review primary">审批</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>3</td>
+                        <td class="doc-title-column">
+                            <span class="title-text">关于新产品研发立项及关键技术突破项目申请</span>
+                            <div class="security-tag critical" data-serial="34567890123456"></div>
+                        </td>
+                        <td>呈批单</td>
+                        <td><span class="user-tag"><i class="fas fa-user"></i> 王强</span></td>
+                        <td>XX公司信息技术部</td>
+                        <td class="deadline urgent-deadline">2025-04-19 12:00</td>
+                        <td><span class="urgent"><i class="fas fa-exclamation-circle"></i> 急件</span></td>
+                        <td class="actions">
+                            <a href="#" class="btn-review primary">审批</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>4</td>
+                        <td class="doc-title-column">
+                            <span class="title-text">2025年第二季度销售业绩汇报及下半年市场策略分析</span>
+                            <div class="security-tag normal" data-serial="45678901234567"></div>
+                        </td>
+                        <td>报告</td>
+                        <td><span class="user-tag"><i class="fas fa-user"></i> 刘芳</span></td>
+                        <td>XX公司信息技术部</td>
+                        <td class="deadline">2025-04-21 18:00</td>
+                        <td><span class="normal"><i class="fas fa-circle"></i> 普通</span></td>
+                        <td class="actions">
+                            <a href="#" class="btn-review primary">审批</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>5</td>
+                        <td class="doc-title-column">
+                            <span class="title-text">办公设备更新采购计划及预算评估报告</span>
+                        </td>
+                        <td>报告</td>
+                        <td><span class="user-tag"><i class="fas fa-user"></i> 周浩</span></td>
+                        <td>XX公司信息技术部</td>
+                        <td class="deadline">2025-04-22 18:00</td>
+                        <td><span class="normal"><i class="fas fa-circle"></i> 普通</span></td>
+                        <td class="actions">
+                            <a href="#" class="btn-review primary">审批</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>6</td>
+                        <td class="doc-title-column">
+                            <span class="title-text">市场部第二季度营销活动策划及效果分析总结</span>
+                        </td>
+                        <td>总结报告</td>
+                        <td><span class="user-tag"><i class="fas fa-user"></i> 赵丽</span></td>
+                        <td>XX公司信息技术部</td>
+                        <td class="deadline">2025-04-23 18:00</td>
+                        <td><span class="normal"><i class="fas fa-circle"></i> 普通</span></td>
+                        <td class="actions">
+                            <a href="#" class="btn-review primary">审批</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>7</td>
+                        <td class="doc-title-column">
+                            <span class="title-text">关于合作伙伴年度评审报告及未来合作意向调查结果</span>
+                        </td>
+                        <td>调研报告</td>
+                        <td><span class="user-tag"><i class="fas fa-user"></i> 钱伟</span></td>
+                        <td>XX公司信息技术部</td>
+                        <td class="deadline">2025-04-24 18:00</td>
+                        <td><span class="normal"><i class="fas fa-circle"></i> 普通</span></td>
+                        <td class="actions">
+                            <a href="#" class="btn-review primary">审批</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>8</td>
+                        <td class="doc-title-column">
+                            <span class="title-text">IT系统安全升级方案及风险评估分析报告</span>
+                        </td>
+                        <td>方案</td>
+                        <td><span class="user-tag"><i class="fas fa-user"></i> 孙杰</span></td>
+                        <td>XX公司信息技术部</td>
+                        <td class="deadline urgent-deadline">2025-04-21 12:00</td>
+                        <td><span class="urgent"><i class="fas fa-exclamation-circle"></i> 急件</span></td>
+                        <td class="actions">
+                            <a href="#" class="btn-review primary">审批</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>9</td>
+                        <td class="doc-title-column">
+                            <span class="title-text">员工培训计划调整报告及人才梯队建设方案</span>
+                        </td>
+                        <td>方案</td>
+                        <td><span class="user-tag"><i class="fas fa-user"></i> 杨柳</span></td>
+                        <td>XX公司信息技术部</td>
+                        <td class="deadline">2025-04-25 18:00</td>
+                        <td><span class="normal"><i class="fas fa-circle"></i> 普通</span></td>
+                        <td class="actions">
+                            <a href="#" class="btn-review primary">审批</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>10</td>
+                        <td class="doc-title-column">
+                            <span class="title-text">客户满意度调查结果分析及服务改进建议方案</span>
+                        </td>
+                        <td>建议方案</td>
+                        <td><span class="user-tag"><i class="fas fa-user"></i> 郑明</span></td>
+                        <td>XX公司信息技术部</td>
+                        <td class="deadline">2025-04-26 18:00</td>
+                        <td><span class="normal"><i class="fas fa-circle"></i> 普通</span></td>
+                        <td class="actions">
+                            <a href="#" class="btn-review primary">审批</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 底部栏 - 批量操作和分页 -->
+        <div class="bottom-bar">
+            <div class="batch-actions">
+                <button class="btn-secondary"><i class="fas fa-print"></i> 批量打印</button>
+                <button class="btn-secondary"><i class="fas fa-check-circle"></i> 批量审批</button>
+            </div>
+            <div class="pagination">
+                <span>第1页，共3页，共30条记录</span>
+                <div class="pagination-controls">
+                    <button><i class="fas fa-angle-left"></i></button>
+                    <button class="active">1</button>
+                    <button>2</button>
+                    <button>3</button>
+                    <button><i class="fas fa-angle-right"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <!-- 添加排序功能的JavaScript -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 获取所有可排序的表头
+        const sortableHeaders = document.querySelectorAll('th[data-sort]');
+        
+        // 为每个可排序表头添加点击事件
+        sortableHeaders.forEach(header => {
+            header.addEventListener('click', function() {
+                // 清除其他表头的排序状态
+                sortableHeaders.forEach(h => {
+                    if (h !== header) {
+                        h.removeAttribute('data-sort');
+                        h.setAttribute('data-sort', '');
+                    }
+                });
+                
+                // 切换当前表头的排序状态
+                if (!this.getAttribute('data-sort') || this.getAttribute('data-sort') === '') {
+                    this.setAttribute('data-sort', 'asc');
+                } else if (this.getAttribute('data-sort') === 'asc') {
+                    this.setAttribute('data-sort', 'desc');
+                } else {
+                    this.setAttribute('data-sort', '');
+                }
+                
+                // 实际排序逻辑可以在这里添加
+                sortTable(header.cellIndex, header.getAttribute('data-sort'));
+            });
+        });
+        
+        // 表格排序函数
+        function sortTable(columnIndex, direction) {
+            if (direction === '') return; // 如果没有排序方向，不执行排序
+            
+            const table = document.querySelector('.doc-list');
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            // 排序行
+            rows.sort((a, b) => {
+                const aValue = a.cells[columnIndex].textContent.trim();
+                const bValue = b.cells[columnIndex].textContent.trim();
+                
+                if (direction === 'asc') {
+                    return aValue.localeCompare(bValue, 'zh-CN');
+                } else {
+                    return bValue.localeCompare(aValue, 'zh-CN');
+                }
+            });
+            
+            // 重新添加排序后的行
+            rows.forEach(row => tbody.appendChild(row));
+        }
+    });
+    </script>
+</body>
+</html> 

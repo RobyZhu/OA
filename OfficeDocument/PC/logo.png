@@ -1,0 +1,16 @@
+<!-- 这只是一个占位文件，实际使用时请替换为公司的真实logo图像 -->
+<!-- 建议尺寸为80x80像素的PNG格式图片，带透明背景 -->
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .logo-text { font-family: 'Arial', sans-serif; font-weight: bold; }
+    .primary { fill: #1677FF; }
+    .secondary { fill: #0958D9; }
+  </style>
+  <rect width="120" height="120" fill="none"/>
+  <circle cx="60" cy="60" r="52" fill="#f0f7ff" />
+  <path class="primary" d="M60 20 C37.909 20 20 37.909 20 60 C20 82.091 37.909 100 60 100 L60 80 C48.954 80 40 71.046 40 60 C40 48.954 48.954 40 60 40 L60 20 Z" />
+  <path class="secondary" d="M80 60 C80 71.046 71.046 80 60 80 L60 100 C82.091 100 100 82.091 100 60 C100 37.909 82.091 20 60 20 L60 40 C71.046 40 80 48.954 80 60 Z" />
+  <path class="primary" d="M60,40 L50,70 L70,70 Z" />
+  <text x="60" y="115" text-anchor="middle" class="logo-text" font-size="12" fill="#1677FF">易航科技</text>
+</svg> 

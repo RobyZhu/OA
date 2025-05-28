@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>公文呈报</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="shortcut icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 120 120'%3E%3Cstyle%3E.primary%7Bfill:%234080FF%7D.secondary%7Bfill:%233060DD%7D%3C/style%3E%3Ccircle cx='60' cy='60' r='52' fill='%23e6f4ff'/%3E%3Cpath class='primary' d='M60 20C37.9 20 20 37.9 20 60c0 22.1 17.9 40 40 40V80c-11 0-20-9-20-20s9-20 20-20V20z'/%3E%3Cpath class='secondary' d='M80 60c0 11-9 20-20 20v20c22.1 0 40-17.9 40-40S82.1 20 60 20v20c11 0 20 9 20 20z'/%3E%3Cpath class='primary' d='M60 40l-10 30h20z'/%3E%3C/svg%3E" type="image/svg+xml">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--background-color);
+            min-height: 100vh;
+        }
+        
+        /* 添加 index.html 头部样式 */
+        .top-header {
+            height: var(--header-height, 60px);
+            background: linear-gradient(135deg, #4080FF 0%, #3060DD 100%);
+            box-shadow: 0 2px 10px rgba(64, 128, 255, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 24px;
+            width: 100%;
+            margin-bottom: 0;
+            box-sizing: border-box;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+        
+        .header-left .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .header-left .logo svg {
+            width: 32px;
+            height: 32px;
+            margin-right: 10px;
+        }
+        
+        .header-left .logo h2 {
+            font-size: 18px;
+            font-weight: 500;
+            color: white;
+            margin: 0;
+            font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+        }
+        
+        .header-left .logo a {
+            text-decoration: none;
+            color: white;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        /* 搜索框样式 */
+        .search-box {
+            display: flex;
+            align-items: center;
+            background-color: #fff;
+            border-radius: 4px;
+            border: 1px solid var(--border-color, #e8e8e8);
+            padding: 0 10px;
+            width: 400px;
+            position: relative;
+        }
+        
+        .search-box i.fa-search {
+            color: var(--secondary-color, #666666);
+            margin-right: 8px;
+        }
+        
+        .search-box input {
+            border: none;
+            flex: 1;
+            height: 36px;
+            padding: 0 8px;
+            outline: none;
+            font-size: 14px;
+        }
+        
+        .search-box button {
+            background-color: var(--primary-color, #4080FF);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 8px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .search-box button:hover {
+            background-color: var(--primary-hover, #3070e0);
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 5px 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            color: white;
+        }
+        
+        .user-info:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            overflow: hidden;
+            background-color: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .avatar svg {
+            width: 32px;
+            height: 32px;
+        }
+        
+        .username {
+            font-size: 14px;
+            font-weight: 500;
+            color: white;
+        }
+        
+        /* 新布局 - 左侧菜单和右侧内容 */
+        .main-container {
+            display: flex;
+            margin: 0 auto;
+            max-width: 1400px;
+            padding: 20px;
+        }
+        
+        /* 左侧分类菜单 */
+        .category-menu {
+            width: 220px;
+            min-width: 220px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-right: 20px;
+            overflow: hidden;
+        }
+        
+        .menu-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .menu-item {
+            border-bottom: 1px solid var(--border-color);
+            transition: all 0.2s;
+        }
+        
+        .menu-item:last-child {
+            border-bottom: none;
+        }
+        
+        .menu-item-link {
+            display: flex;
+            align-items: center;
+            padding: 14px 16px;
+            color: var(--text-color);
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .menu-item-link:hover, .menu-item-link.active {
+            background-color: rgba(64, 128, 255, 0.05);
+            color: var(--primary-color);
+        }
+        
+        .menu-item-link i {
+            width: 24px;
+            margin-right: 10px;
+            color: var(--primary-color);
+            font-size: 16px;
+        }
+        
+        /* 右侧内容区 */
+        .content-area {
+            flex: 1;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            min-height: calc(100vh - 180px);
+        }
+        
+        /* 模板网格 */
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 16px;
+            padding-top: 10px;
+        }
+        
+        .template-item {
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-radius: 8px;
+            padding: 16px 12px;
+            background-color: rgba(0, 0, 0, 0.01);
+            border: 1px solid transparent;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .template-item:hover {
+            transform: translateY(-5px);
+            background-color: rgba(64, 128, 255, 0.05);
+            border-color: rgba(64, 128, 255, 0.1);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .template-icon {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            color: white;
+            border-radius: 50%;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .template-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+        
+        /* 图标颜色 - 使用index.html中的颜色方案 */
+        .icon-admin { 
+            background-color: rgba(64, 128, 255, 0.9);
+            box-shadow: 0 4px 8px rgba(64, 128, 255, 0.3);
+        }
+        
+        .icon-finance { 
+            background-color: rgba(46, 212, 122, 0.9);
+            box-shadow: 0 4px 8px rgba(46, 212, 122, 0.3);
+        }
+        
+        .icon-hr { 
+            background-color: rgba(237, 85, 101, 0.9);
+            box-shadow: 0 4px 8px rgba(237, 85, 101, 0.3);
+        }
+        
+        .icon-purchase { 
+            background-color: rgba(255, 176, 32, 0.9);
+            box-shadow: 0 4px 8px rgba(255, 176, 32, 0.3);
+        }
+        
+        .icon-it { 
+            background-color: rgba(157, 102, 254, 0.9);
+            box-shadow: 0 4px 8px rgba(157, 102, 254, 0.3);
+        }
+        
+        .icon-operation { 
+            background-color: rgba(79, 193, 233, 0.9);
+            box-shadow: 0 4px 8px rgba(79, 193, 233, 0.3);
+        }
+        
+        /* 草稿箱 */
+        .draft-box {
+            position: fixed;
+            right: 30px;
+            bottom: 30px;
+            width: 70px;
+            height: 70px;
+            background-color: var(--primary-color);
+            background-image: linear-gradient(135deg, #4080FF 0%, #3060DD 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(64, 128, 255, 0.4);
+            cursor: pointer;
+            transition: all 0.3s;
+            z-index: 100;
+        }
+        
+        .draft-box:hover {
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 0 6px 20px rgba(64, 128, 255, 0.5);
+        }
+        
+        .draft-box i {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .draft-box-text {
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        /* 响应式布局 */
+        @media (max-width: 992px) {
+            .main-container {
+                flex-direction: column;
+                padding: 12px;
+            }
+            
+            .category-menu {
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 16px;
+            }
+            
+            .menu-list {
+                display: flex;
+                overflow-x: auto;
+                padding: 8px;
+            }
+            
+            .menu-item {
+                border-bottom: none;
+                border-right: 1px solid var(--border-color);
+                white-space: nowrap;
+            }
+            
+            .menu-item:last-child {
+                border-right: none;
+            }
+            
+            .content-area {
+                min-height: auto;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .template-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 12px;
+            }
+            
+            .template-icon {
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .template-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 10px;
+            }
+            
+            .draft-box {
+                width: 60px;
+                height: 60px;
+                right: 20px;
+                bottom: 20px;
+            }
+            
+            .draft-box i {
+                font-size: 20px;
+            }
+            
+            .draft-box-text {
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 添加头部 -->
+    <header class="top-header">
+        <div class="header-left">
+            <div class="logo">
+                <svg width="32" height="32" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                    <style>
+                        .primary { fill: #4080FF; }
+                        .secondary { fill: #3060DD; }
+                    </style>
+                    <circle cx="60" cy="60" r="52" fill="#e6f4ff" />
+                    <path class="primary" d="M60 20 C37.909 20 20 37.909 20 60 C20 82.091 37.909 100 60 100 L60 80 C48.954 80 40 71.046 40 60 C40 48.954 48.954 40 60 40 L60 20 Z" />
+                    <path class="secondary" d="M80 60 C80 71.046 71.046 80 60 80 L60 100 C82.091 100 100 82.091 100 60 C100 37.909 82.091 20 60 20 L60 40 C71.046 40 80 48.954 80 60 Z" />
+                    <path class="primary" d="M60,40 L50,70 L70,70 Z" />
+                </svg>
+                <a href="index.html"><h2>公文审批系统</h2></a>
+            </div>
+        </div>
+        <div class="header-right">
+            <!-- 添加搜索栏 -->
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text"  value="请输入公文类型" style="color:var(--text-color);">
+                <button>搜索</button>
+            </div>
+            <div class="user-info">
+                <span class="avatar">
+                    <svg width="32" height="32" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="60" cy="60" r="60" fill="#e6f4ff"/>
+                        <circle cx="60" cy="45" r="20" fill="#4080FF"/>
+                        <path d="M60,75 C40,75 25,90 25,110 L95,110 C95,90 80,75 60,75 Z" fill="#4080FF"/>
+                    </svg>
+                </span>
+                <span class="username">易航科技</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container" style="margin-top: 55px;">
+        <!-- 左侧分类菜单 -->
+        <div class="category-menu">
+            <ul class="menu-list">
+                <li class="menu-item">
+                    <a href="#admin" class="menu-item-link active" onclick="showCategory('admin')">
+                        <i class="fas fa-landmark"></i> 行政类
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#finance" class="menu-item-link" onclick="showCategory('finance')">
+                        <i class="fas fa-money-bill-wave"></i> 财务类
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#hr" class="menu-item-link" onclick="showCategory('hr')">
+                        <i class="fas fa-users"></i> 人力资源类
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#purchase" class="menu-item-link" onclick="showCategory('purchase')">
+                        <i class="fas fa-shopping-cart"></i> 采购类
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#it" class="menu-item-link" onclick="showCategory('it')">
+                        <i class="fas fa-laptop-code"></i> IT类
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#operation" class="menu-item-link" onclick="showCategory('operation')">
+                        <i class="fas fa-cogs"></i> 运行管理类
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- 右侧内容区域 -->
+        <div class="content-area">
+            <!-- 行政类模板 (默认显示) -->
+            <div id="admin" class="template-category active">
+                <div class="template-grid">
+                    <div class="template-item">
+                        <div class="template-icon icon-admin">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <div class="template-name">会议纪要</div>
+                    </div>
+                    <div class="template-item">
+                        <div class="template-icon icon-admin">
+                            <i class="fas fa-file-signature"></i>
+                        </div>
+                        <div class="template-name">文件签批单</div>
+                    </div>
+                    <div class="template-item">
+                        <div class="template-icon icon-admin">
+                            <i class="fas fa-newspaper"></i>
+                        </div>
+                        <div class="template-name">通知公告</div>
+                    </div>
+                    <div class="template-item">
+                        <div class="template-icon icon-admin">
+                            <i class="fas fa-clipboard-list"></i>
+                        </div>
+                        <div class="template-name">制度发布</div>
+                    </div>
+                    <div class="template-item">
+                        <div class="template-icon icon-admin">
+                            <i class="fas fa-tasks"></i>
+                        </div>
+                        <div class="template-name">工作计划</div>
+                    </div>
+                    <div class="template-item">
+                        <div class="template-icon icon-admin">
+                            <i class="fas fa-file-contract"></i>
+                        </div>
+                        <div class="template-name">合同审批</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 财务类模板 (初始隐藏) -->
+            <div id="finance" class="template-category" style="display: none;">
+                <div class="template-grid">
+                    <div class="template-item">
+                        <div class="template-icon icon-finance">
+                            <i class="fas fa-hand-holding-usd"></i>
+                        </div>
+                        <div class="template-name">费用报销</div>
+                    </div>
+                    <div class="template-item">
+                        <div class="template-icon icon-finance">
+                            <i class="fas fa-credit-card"></i>
+                        </div>
+                        <div class="template-name">借款申请</div>
+                    </div>
+                    <div class="template-item">
+                        <div class="template-icon icon-finance">
+                            <i class="fas fa-donate"></i>
+                        </div>
+                        <div class="template-name">预算申请</div>
+                    </div>
+                    <div class="template-item">
+                        <div class="template-icon icon-finance">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                        </div>
+                        <div class="template-name">付款申请</div>
+                    </div>
+                    <div class="template-item">
+                        <div class="template-icon icon-finance">
+                            <i class="fas fa-coins"></i>
+                        </div>
+                        <div class="template-name">财务审核</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 人力资源类模板 (初始隐藏) -->
+            <div id="hr" class="template-category" style="display: none;">
+                <div class="template-grid">
+                    <div class="template-item" onclick="window.open('休假申请单.HTML', '_blank')">
+                        <div class="template-icon icon-hr">
+                            <i class="fas fa-umbrella-beach"></i>
+                        </div>
+                        <div class="template-name">休假申请单</div>
+                    </div>
+                    <div class="template-item">
+                        <div class="template-icon icon-hr">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <div class="template-name">招聘申请</div>
+                    </div>
+                    <div class="template-item">
+                        <div class="template-icon icon-hr">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                        </div>
+                        <div class="template-name">培训申请</div>
+                    </div>
+                    <div class="template-item">
+                        <div class="template-icon icon-hr">
+                            <i class="fas fa-user-tie"></i>
+                        </div>
+                        <div class="template-name">晋升申请</div>
+                    </div>
+                    <div class="template-item">
+                        <div class="template-icon icon-hr">
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                        <div class="template-name">绩效考核</div>
+                    </div>
+                    <div class="template-item">
+                        <div class="template-icon icon-hr">
+                            <i class="fas fa-id-card-alt"></i>
+                        </div>
+                        <div class="template-name">转正申请</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 采购类模板 (初始隐藏) -->
+            <div id="purchase" class="template-category" style="display: none;">
+                <div class="template-grid">
+                    <div class="template-item">
+                        <div class="template-icon icon-purchase">
+                            <i class="fas fa-shopping-basket"></i>
+                        </div>
+                        <div class="template-name">采购申请</div>
+                    </div>
+                    <div class="template-item">
+                        <div class="template-icon icon-purchase">
+                            <i class="fas fa-truck"></i>
+                        </div>
+                        <div class="template-name">供应商引入</div>
+                    </div>
+                    <div class="template-item">
+                        <div class="template-icon icon-purchase">
+                            <i class="fas fa-boxes"></i>
+                        </div>
+                        <div class="template-name">库存申请</div>
+                    </div>
+                    <div class="template-item">
+                        <div class="template-icon icon-purchase">
+                            <i class="fas fa-dolly-flatbed"></i>
+                        </div>
+                        <div class="template-name">物资领用</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- IT类模板 (初始隐藏) -->
+            <div id="it" class="template-category" style="display: none;">
+                <div class="template-grid">
+                    <div class="template-item">
+                        <div class="template-icon icon-it">
+                            <i class="fas fa-server"></i>
+                        </div>
+                        <div class="template-name">系统权限申请</div>
+                    </div>
+                    <div class="template-item">
+                        <div class="template-icon icon-it">
+                            <i class="fas fa-desktop"></i>
+                        </div>
+                        <div class="template-name">设备申请</div>
+                    </div>
+                    <div class="template-item">
+                        <div class="template-icon icon-it">
+                            <i class="fas fa-bug"></i>
+                        </div>
+                        <div class="template-name">故障报修</div>
+                    </div>
+                    <div class="template-item">
+                        <div class="template-icon icon-it">
+                            <i class="fas fa-project-diagram"></i>
+                        </div>
+                        <div class="template-name">系统开发申请</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 运行管理类模板 (初始隐藏) -->
+            <div id="operation" class="template-category" style="display: none;">
+                <div class="template-grid">
+                    <div class="template-item">
+                        <div class="template-icon icon-operation">
+                            <i class="fas fa-hardhat"></i>
+                        </div>
+                        <div class="template-name">工程申请</div>
+                    </div>
+                    <div class="template-item">
+                        <div class="template-icon icon-operation">
+                            <i class="fas fa-tools"></i>
+                        </div>
+                        <div class="template-name">维修申请</div>
+                    </div>
+                    <div class="template-item">
+                        <div class="template-icon icon-operation">
+                            <i class="fas fa-car"></i>
+                        </div>
+                        <div class="template-name">用车申请</div>
+                    </div>
+                    <div class="template-item">
+                        <div class="template-icon icon-operation">
+                            <i class="fas fa-clipboard-check"></i>
+                        </div>
+                        <div class="template-name">验收申请</div>
+                    </div>
+                    <div class="template-item">
+                        <div class="template-icon icon-operation">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <div class="template-name">场地申请</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 草稿箱 -->
+    <div class="draft-box" onclick="window.open('公文草稿箱.HTML', '_blank')">
+        <i class="fas fa-inbox"></i>
+        <span class="draft-box-text">草稿箱</span>
+    </div>
+
+    <script>
+        // 添加点击事件打开新标签页
+        document.querySelectorAll('.template-item').forEach(item => {
+            if (!item.getAttribute('onclick')) {
+                item.addEventListener('click', function() {
+                    // 默认打开一个通用模板页，除了特定的模板
+                    window.open('#', '_blank');
+                });
+            }
+        });
+        
+        // 分类切换功能
+        function showCategory(categoryId) {
+            // 隐藏所有分类
+            document.querySelectorAll('.template-category').forEach(cat => {
+                cat.style.display = 'none';
+            });
+            
+            // 移除所有菜单项的active类
+            document.querySelectorAll('.menu-item-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // 显示选中的分类
+            document.getElementById(categoryId).style.display = 'block';
+            
+            // 设置菜单项active状态
+            document.querySelector('.menu-item-link[href="#' + categoryId + '"]').classList.add('active');
+        }
+        
+        // 阻止菜单链接的默认锚点行为
+        document.querySelectorAll('.menu-item-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault(); // 阻止默认的锚点跳转行为
+                // 获取目标分类ID
+                const categoryId = this.getAttribute('href').replace('#', '');
+                showCategory(categoryId);
+            });
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>公文查询详情</title>
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"> -->
+    <!-- 添加人员选择控件样式 -->
+    <link rel="stylesheet" href="components/PersonnelSelector.css">
+    <style>
+        :root {
+            --primary-color: #1890ff;
+            --primary-hover: #40a9ff;
+            --text-color: #333333;
+            --text-secondary: #666666;
+            --border-color: #e8e8e8;
+            --background-color: #f5f5f5;
+            --success-color: #52c41a;
+            --warning-color: #faad14;
+            --danger-color: #ff4d4f;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--background-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .page-header {
+            width: 100%;
+            height:var(--header-height, 60px);
+            background-color: var(--primary-color);
+            color: white;
+            text-align: center;
+            padding: 15px 0;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .page-header h1 {
+            font-size: 28px;
+            margin: 0;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            width: 90%;
+            margin: 0 auto;
+            padding: 0 20px 40px;
+        }
+        
+        /* 上部分 - 申请单详情 */
+        .form-section {
+            background-color: white;
+            border-radius: 6px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .section-title {
+            font-size: 18px;
+            color: var(--primary-color);
+            margin: 0;
+        }
+        
+        .section-action {
+            color: var(--primary-color);
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .collapse-btn {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+            display: flex;
+        }
+        
+        .form-label {
+            width: 120px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            padding-right: 12px;
+            text-align: left;
+        }
+        
+        .form-value {
+            flex: 1;
+            font-size: 14px;
+            color: var(--text-color);
+            min-height: 20px;
+        }
+        
+        /* 折叠状态时仅显示标题和请示意见 */
+        .form-collapsed .form-content {
+            display: none;
+        }
+        
+        .form-collapsed .form-summary {
+            display: block;
+        }
+        
+        .form-summary {
+            display: none;
+            padding: 10px 0;
+        }
+        
+        /* 中部分 - 签批意见 */
+        .approval-section {
+            background-color: white;
+            border-radius: 6px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .approval-list {
+            margin-top: 15px;
+        }
+        
+        .approval-item {
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            position: relative;
+        }
+        
+        .approval-item:last-child {
+            border-bottom: none;
+        }
+        
+        .approval-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .approver-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .approver-name {
+            font-weight: 500;
+            color: var(--text-color);
+        }
+        
+        .approver-role {
+            font-size: 12px;
+            color: var(--text-secondary);
+            background-color: #f5f5f5;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+        
+        .approval-time {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        .approval-content {
+            padding: 10px 0;
+            color: var(--text-color);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .approval-status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        
+        .status-approved {
+            background-color: rgba(82, 196, 26, 0.1);
+            color: var(--success-color);
+        }
+        
+        .status-rejected {
+            background-color: rgba(255, 77, 79, 0.1);
+            color: var(--danger-color);
+        }
+        
+        /* 下部分 - 操作栏 */
+        .operation-section {
+            background-color: white;
+            border-radius: 6px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        
+        .operation-header {
+            margin-bottom: 20px;
+        }
+        
+        .approval-options {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .approval-option {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+        
+        .operation-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .btn-icon {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .common-opinions {
+            margin-bottom: 20px;
+        }
+        
+        .opinion-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .opinion-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .opinion-item {
+            padding: 5px 12px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+            color: var(--text-color);
+        }
+        
+        .opinion-item:hover {
+            background-color: rgba(24, 144, 255, 0.1);
+            color: var(--primary-color);
+        }
+        
+        .approval-textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 10px 12px;
+            font-size: 14px;
+            color: var(--text-color);
+            background-color: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            transition: all 0.3s;
+            box-sizing: border-box;
+            resize: vertical;
+            margin-bottom: 20px;
+        }
+        
+        .next-approvers {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+        
+        .next-approvers-title {
+            font-weight: 500;
+            color: var(--text-color);
+            margin-bottom: 10px;
+        }
+        
+        .approver-flow {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        
+        .approver-step {
+            display: flex;
+            align-items: center;
+        }
+        
+        .approver-node {
+            padding: 5px 10px;
+            background-color: white;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        
+        .flow-arrow {
+            margin: 0 5px;
+            color: var(--text-secondary);
+        }
+        
+        .submission-actions {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            padding: 10px 24px;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+        }
+        
+        .btn-default {
+            background-color: white;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+        
+        .btn-default:hover {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+        
+        /* 对话框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            width: 900px;
+            max-width: 95%;
+            animation: modalFadeIn 0.3s;
+            position: relative;
+        }
+        
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .modal-header {
+            padding: 18px 24px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid var(--border-color);
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-color);
+            margin: 0;
+        }
+        
+        .modal-close {
+            font-size: 22px;
+            color: #999;
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: color 0.2s;
+            padding: 0;
+            line-height: 1;
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            z-index: 10;
+        }
+        
+        .modal-close:hover {
+            color: var(--text-color);
+        }
+        
+        .modal-body {
+            padding: 24px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+            background-color: #f8f9fa;
+        }
+        
+        /* 表单样式 */
+        .form-group {
+            margin-bottom: 24px;
+            display: block;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 15px;
+            color: var(--text-color);
+            font-weight: 500;
+            width: 100%;
+        }
+        
+        .form-control-container {
+            width: 100%;
+            display: block;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 14px;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            transition: all 0.3s;
+            box-sizing: border-box;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+            outline: none;
+        }
+        
+        textarea.form-control {
+            min-height: 100px;
+            resize: vertical;
+            line-height: 1.5;
+        }
+        
+        /* 用户选择器样式 */
+        .user-selector {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-select {
+            padding: 8px 12px;
+            background-color: white;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .btn-select:hover {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .selected-users {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .user-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            background-color: rgba(24, 144, 255, 0.1);
+            border-radius: 4px;
+            font-size: 13px;
+            color: var(--primary-color);
+        }
+        
+        .user-tag .remove {
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        /* 单选按钮样式 */
+        .radio-group {
+            display: flex;
+            gap: 24px;
+        }
+        
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .radio-option input[type="radio"] {
+            margin: 0;
+            cursor: pointer;
+        }
+        
+        /* 用户列表样式 */
+        .user-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+        
+        .user-item {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .user-item:last-child {
+            border-bottom: none;
+        }
+        
+        .user-item:hover {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+        
+        .user-item.selected {
+            background-color: rgba(24, 144, 255, 0.05);
+        }
+        
+        .user-item-checkbox {
+            margin-right: 10px;
+        }
+        
+        .user-item-info {
+            flex: 1;
+        }
+        
+        .user-item-name {
+            font-size: 14px;
+            color: var(--text-color);
+        }
+        
+        .user-item-dept {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        
+        .search-box {
+            margin-bottom: 15px;
+        }
+        
+        /* 历史记录列表样式 */
+        .history-list-section {
+            margin-top: 30px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+        }
+        
+        .section-subtitle {
+            font-size: 16px;
+            color: var(--text-color);
+            margin-bottom: 16px;
+            font-weight: 500;
+        }
+        
+        .table-responsive {
+            overflow-x: auto;
+            margin-bottom: 15px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+        
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        
+        .history-table th,
+        .history-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+        
+        .history-table th {
+            background-color: #f2f3f5;
+            font-weight: 500;
+            color: var(--text-secondary);
+            border-bottom: 2px solid #e0e0e0;
+            white-space: nowrap;
+            font-size: 14px;
+        }
+        
+        .history-table tr:hover {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+        
+        .history-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            line-height: 1;
+        }
+        
+        .status-done {
+            background-color: rgba(82, 196, 26, 0.1);
+            color: var(--success-color);
+        }
+        
+        .status-pending {
+            background-color: rgba(250, 173, 20, 0.1);
+            color: var(--warning-color);
+        }
+        
+        .btn-delete {
+            color: var(--danger-color);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 5px 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .btn-delete:hover {
+            background-color: rgba(255, 77, 79, 0.05);
+        }
+        
+        /* 管理按钮样式 */
+        .btn-manage-opinion {
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 4px 10px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+        
+        .btn-manage-opinion:hover {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+            background-color: rgba(24, 144, 255, 0.05);
+        }
+        
+        /* 意见管理列表样式 */
+        .opinion-manage-list {
+            margin-bottom: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+        
+        .opinion-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .opinion-table th,
+        .opinion-table td {
+            padding: 10px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .opinion-table th {
+            background-color: #f2f3f5;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        
+        .opinion-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .opinion-table tr:hover {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+        
+        /* 添加意见表单样式 */
+        .add-opinion-form {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .opinion-input-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .opinion-input-group .form-control {
+            flex: 1;
+        }
+        
+        .opinion-input-group .btn {
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <!-- 页面标题放在最顶部 -->
+    <div class="page-header" style="height: 30px;">
+        <h2 style="margin: 0">公文详情</h2>
+    </div>
+    
+    <div class="container">
+        <!-- 上部分 - 休假申请单详情 -->
+        <div class="form-section" id="applicationDetails">
+            <div class="section-header">
+                <h2 class="section-title">休假申请单</h2>
+                <button class="collapse-btn" id="collapseBtn">
+                    <i class="fas fa-chevron-up"></i> 折叠
+                </button>
+            </div>
+            
+            <!-- 折叠时显示的摘要信息 -->
+            <div class="form-summary" id="formSummary">
+                <div class="form-group">
+                    <div class="form-label">公文标题：</div>
+                    <div class="form-value">张明的年休假申请</div>
+                </div>
+                <div class="form-group">
+                    <div class="form-label">请示意见：</div>
+                    <div class="form-value">因个人原因，申请2025-04-15至2025-04-19休年假5天，请领导审批。</div>
+                </div>
+            </div>
+            
+            <!-- 展开时显示的完整表单 -->
+            <div class="form-content" id="formContent">
+                <!-- 基本信息 -->
+                <div class="form-group" style="display: flex; flex-wrap: nowrap;">
+                    <div class="form-label" style="width: 80px; flex-shrink: 0;">公文标题：</div>
+                    <div class="form-value" style="width: 120px; margin-right: 30px;">张明的年休假申请</div>
+                </div>
+                <div class="form-group" style="display: flex; flex-wrap: nowrap;">
+                    <div class="form-label" style="width: 80px; flex-shrink: 0;">公文密级：</div>
+                    <div class="form-value" style="width: 120px; margin-right: 30px;">不涉密</div>
+                    <div class="form-label" style="width: 80px; flex-shrink: 0;">紧急程度：</div>
+                    <div class="form-value" style="width: 150px; margin-right: 30px;">平件</div>
+                    <div class="form-label" style="width: 80px; flex-shrink: 0;"></div>
+                    <div class="form-value" style="width: 150px;"></div>
+                </div>
+                <div class="form-group" style="display: flex; flex-wrap: nowrap;">
+                    <div class="form-label" style="width: 80px; flex-shrink: 0;">申请人：</div>
+                    <div class="form-value" style="width: 120px; margin-right: 30px;">张明</div>
+                    <div class="form-label" style="width: 80px; flex-shrink: 0;">部门：</div>
+                    <div class="form-value" style="width: 150px; margin-right: 30px;">信息技术部</div>
+                    <div class="form-label" style="width: 80px; flex-shrink: 0;">职位：</div>
+                    <div class="form-value" style="width: 150px;">软件工程师</div>
+                </div>
+             
+
+                <!-- 休假信息 -->
+                <div class="form-group" style="display: flex; flex-wrap: nowrap;">
+                    <div class="form-label" style="width: 80px; flex-shrink: 0;">休假类型：</div>
+                    <div class="form-value" style="width: 120px; margin-right: 30px;">年休假</div>
+                    <div class="form-label" style="width: 80px; flex-shrink: 0;">开始日期：</div>
+                    <div class="form-value" style="width: 150px; margin-right: 30px;">2025-04-15</div>
+                    <div class="form-label" style="width: 80px; flex-shrink: 0;">结束日期：</div>
+                    <div class="form-value" style="width: 150px;">2025-04-19</div>
+                </div>
+               
+                <div class="form-group" style="display: flex; flex-wrap: nowrap;">
+                    <div class="form-label" style="width: 80px; flex-shrink: 0;">休假天数：</div>
+                    <div class="form-value" style="width: 120px; margin-right: 30px;">5天</div>
+                    <div class="form-label" style="width: 80px; flex-shrink: 0;">休假事由：</div>
+                    <div class="form-value" style="width: 150px;; margin-right: 30px;">处理个人事务</div>
+                    <div class="form-label" style="width: 80px; flex-shrink: 0;"></div>
+                    <div class="form-value" style="width: 150px;"></div>
+                </div>
+                
+                <!-- 工作交接 -->
+                <div class="form-group">
+                    <div class="form-label">工作交接情况：</div>
+                    <div class="form-value">1. 系统维护工作交接张三<br>2. 日常数据备份交接李四<br>3. 客户问题响应交接王五</div>
+                </div>
+                   <!-- 请示意见 -->
+                   <div class="form-group">
+                    <div class="form-label">请示意见：</div>
+                    <div class="form-value">因个人原因，申请2025-04-15至2025-04-19休年假5天，请领导审批。</div>
+                </div>
+                <!-- 附件 -->
+                <div class="form-group">
+                    <div class="form-label">附件：</div>
+                    <div class="form-value">
+                        <div class="attached-files">
+                            <div class="file-item">
+                                <div class="file-name"><a href="#" class="file-action" style="color: #333333;"><i class="fas fa-file-pdf"></i> 休假证明.pdf</a></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="form-label">附加公文：</div>
+                    <div class="form-value">
+                        <div class="attached-files">
+                            <div class="file-item">
+                                <div class="file-name"><a href="#" class="file-action" style="color: #333333;"><i class="fas fa-file-pdf"></i>关于XXXX的附加公文</a></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 中部分 - 签批意见区域 -->
+        <div class="approval-section">
+            <div class="section-header">
+                <h2 class="section-title">签批意见</h2>
+            </div>
+            
+            <div class="approval-list">
+                <!-- 第一个审批人的意见 -->
+                <div class="approval-item">
+                    <div class="approval-header">
+                        <div class="approver-info">
+                            <span class="approver-name">王丽娜</span>
+                            <span class="approver-role">部门主管</span>
+                            <span class="approval-status status-approved">已同意</span>
+                        </div>
+                        <div class="approval-time">2025-04-11 09:30</div>
+                    </div>
+                    <div class="approval-content">
+                        申请人休假期间工作已安排妥当，同意休假申请。
+                    </div>
+                </div>
+                
+                <!-- 第二个审批人的意见 -->
+                <div class="approval-item">
+                    <div class="approval-header">
+                        <div class="approver-info">
+                            <span class="approver-name">张雪梅</span>
+                            <span class="approver-role">人力资源主管</span>
+                            <span class="approval-status status-approved">已同意</span>
+                        </div>
+                        <div class="approval-time">2025-04-11 14:15</div>
+                    </div>
+                    <div class="approval-content">
+                        经核实，申请人年休假余额充足，符合休假规定，同意申请。
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 公文分发区域 -->
+        <div class="form-section">
+            <div class="section-header">
+                <h2 class="section-title">公文分发</h2>
+                <button type="button" class="btn-default" id="addDistributeBtn" style="padding: 5px 10px; font-size: 13px;">
+                    <i class="fas fa-plus"></i> 新增分发
+                </button>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="history-table" id="distributeTable">
+                    <thead>
+                        <tr>
+                            <th width="60px">序号</th>
+                            <th width="150px">操作人</th>
+                            <th width="150px">接收人</th>
+                            <th width="200px">阅读时间</th>
+                            <th width="80px">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="distributeList">
+                        <tr>
+                            <td>1</td>
+                            <td>张明（zhangming）</td>
+                            <td>王强（wangqiang）</td>
+                            <td>2025-04-12 10:30</td>
+                            <td>
+                                <button class="btn-delete" data-id="1">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>张明（zhangming）</td>
+                            <td>李建国（lijg）</td>
+                            <td>2025-04-12 11:15</td>
+                            <td>
+                                <button class="btn-delete" data-id="2">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>张明（zhangming）</td>
+                            <td>赵敏（zhaomin）</td>
+                            <td>未阅读</td>
+                            <td>
+                                <button class="btn-delete" data-id="3">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- 添加分发对话框 -->
+        <div class="modal" id="distributeModal">
+            <div class="modal-content" style="width: 600px; max-width: 95%;">
+                <div class="modal-header">
+                    <h3 class="modal-title">选择接收人</h3>
+                </div>
+                <button class="modal-close" id="closeDistributeModal">&times;</button>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">请选择接收人：</label>
+                        <div class="form-control-container">
+                            <!-- 人员选择控件容器 -->
+                            <div id="receiverSelector"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-default" id="cancelDistribute">取消</button>
+                    <button class="btn btn-primary" id="submitDistribute">确定</button>
+                </div>
+            </div>
+        </div>
+        
+        <script>
+            // 处理折叠按钮点击事件
+            collapseBtn.addEventListener('click', function() {
+                const isCollapsed = applicationDetails.classList.toggle('form-collapsed');
+                
+                if (isCollapsed) {
+                    // 折叠状态
+                    collapseBtn.innerHTML = '<i class="fas fa-chevron-down"></i> 展开';
+                    formContent.style.display = 'none';
+                    formSummary.style.display = 'block';
+                } else {
+                    // 展开状态
+                    collapseBtn.innerHTML = '<i class="fas fa-chevron-up"></i> 折叠';
+                    formContent.style.display = 'block';
+                    formSummary.style.display = 'none';
+                }
+            });
+            
+            // 公文分发功能相关JavaScript
+            document.addEventListener('DOMContentLoaded', function() {
+                // 获取相关元素
+                const addDistributeBtn = document.getElementById('addDistributeBtn');
+                const distributeModal = document.getElementById('distributeModal');
+                const closeDistributeModal = document.getElementById('closeDistributeModal');
+                const cancelDistribute = document.getElementById('cancelDistribute');
+                const submitDistribute = document.getElementById('submitDistribute');
+                const distributeList = document.getElementById('distributeList');
+                
+                // 分发记录数据
+                let distributeRecords = [
+                    { id: 1, operator: '张明', operatorAccount: 'zhangming', receiver: '王强', receiverAccount: 'wangqiang', readTime: '2025-04-12 10:30' },
+                    { id: 2, operator: '张明', operatorAccount: 'zhangming', receiver: '李建国', receiverAccount: 'lijg', readTime: '2025-04-12 11:15' },
+                    { id: 3, operator: '张明', operatorAccount: 'zhangming', receiver: '赵敏', receiverAccount: 'zhaomin', readTime: '未阅读' }
+                ];
+                
+                // 人员选择器实例
+                let receiverSelector = null;
+                
+                // 打开分发对话框
+                addDistributeBtn.addEventListener('click', function() {
+                    distributeModal.style.display = 'flex';
+                    
+                    // 初始化人员选择控件（如果尚未初始化）
+                    if (!receiverSelector) {
+                        receiverSelector = new PersonnelSelector({
+                            containerId: 'receiverSelector',
+                            placeholder: '请选择接收人',
+                            multiple: true,
+                            onSelectionChange: function(selected) {
+                                console.log('已选择的接收人：', selected);
+                            }
+                        });
+                    }
+                });
+                
+                // 关闭分发对话框
+                closeDistributeModal.addEventListener('click', function() {
+                    distributeModal.style.display = 'none';
+                });
+                
+                cancelDistribute.addEventListener('click', function() {
+                    distributeModal.style.display = 'none';
+                });
+                
+                // 点击确定按钮添加接收人
+                submitDistribute.addEventListener('click', function() {
+                    const selectedPersonnel = receiverSelector ? receiverSelector.getSelectedPersonnel() : [];
+                    
+                    if (selectedPersonnel.length === 0) {
+                        alert('请选择接收人');
+                        return;
+                    }
+                    
+                    // 添加新的分发记录
+                    selectedPersonnel.forEach(person => {
+                        const newId = distributeRecords.length > 0 ? 
+                            Math.max(...distributeRecords.map(record => record.id)) + 1 : 1;
+                            
+                        const newRecord = {
+                            id: newId,
+                            operator: '张明',
+                            operatorAccount: 'zhangming',
+                            receiver: person.name,
+                            receiverAccount: person.account,
+                            readTime: '未阅读'
+                        };
+                        
+                        distributeRecords.push(newRecord);
+                    });
+                    
+                    // 重新渲染分发列表
+                    renderDistributeList();
+                    
+                    // 清空选择
+                    receiverSelector.clearSelection();
+                    
+                    // 关闭对话框
+                    distributeModal.style.display = 'none';
+                });
+                
+                // 渲染分发列表
+                function renderDistributeList() {
+                    distributeList.innerHTML = '';
+                    
+                    distributeRecords.forEach((record, index) => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${index + 1}</td>
+                            <td>${record.operator}（${record.operatorAccount}）</td>
+                            <td>${record.receiver}（${record.receiverAccount}）</td>
+                            <td>${record.readTime}</td>
+                            <td>
+                                <button class="btn-delete" data-id="${record.id}">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        `;
+                        
+                        distributeList.appendChild(row);
+                    });
+                    
+                    // 绑定删除按钮事件
+                    distributeList.querySelectorAll('.btn-delete').forEach(btn => {
+                        btn.addEventListener('click', handleDeleteDistribute);
+                    });
+                }
+                
+                // 处理删除分发记录
+                function handleDeleteDistribute(e) {
+                    const btn = e.currentTarget;
+                    const id = parseInt(btn.dataset.id);
+                    
+                    if (confirm('确定要删除此分发记录吗？')) {
+                        const index = distributeRecords.findIndex(record => record.id === id);
+                        if (index !== -1) {
+                            distributeRecords.splice(index, 1);
+                            renderDistributeList();
+                        }
+                    }
+                }
+                
+                // 点击模态框外部关闭模态框
+                window.addEventListener('click', function(event) {
+                    if (event.target === distributeModal) {
+                        distributeModal.style.display = 'none';
+                    }
+                });
+                
+                // 初始绑定删除按钮事件
+                distributeList.querySelectorAll('.btn-delete').forEach(btn => {
+                    btn.addEventListener('click', handleDeleteDistribute);
+                });
+            });
+        </script>
+        
+    </div>
+    
+    <!-- 引入人员选择控件JS -->
+    <script src="components/PersonnelSelector.js"></script>
+</body>
+</html> 

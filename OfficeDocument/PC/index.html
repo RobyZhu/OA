@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>公文审批系统</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="shortcut icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 120 120'%3E%3Cstyle%3E.primary%7Bfill:%234080FF%7D.secondary%7Bfill:%233060DD%7D%3C/style%3E%3Ccircle cx='60' cy='60' r='52' fill='%23e6f4ff'/%3E%3Cpath class='primary' d='M60 20C37.9 20 20 37.9 20 60c0 22.1 17.9 40 40 40V80c-11 0-20-9-20-20s9-20 20-20V20z'/%3E%3Cpath class='secondary' d='M80 60c0 11-9 20-20 20v20c22.1 0 40-17.9 40-40S82.1 20 60 20v20c11 0 20 9 20 20z'/%3E%3Cpath class='primary' d='M60 40l-10 30h20z'/%3E%3C/svg%3E" type="image/svg+xml">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="components/PersonnelSelector.css">
+    <link rel="stylesheet" href="components/OrganizationSelector.css">
+    
+    <style>
+        /* 修复搜索框样式 */
+        .search-box {
+            display: flex;
+            align-items: center;
+            background-color: #fff;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            padding: 0 10px;
+            width: 400px;
+            position: relative;
+        }
+        
+        .search-box i.fa-search {
+            color: var(--secondary-color);
+            margin-right: 8px;
+        }
+        
+        .search-box input {
+            border: none;
+            flex: 1;
+            height: 36px;
+            padding: 0 8px;
+            outline: none;
+            font-size: 14px;
+            padding-right: 30px; /* 为搜索图标预留空间 */
+        }
+        
+        .search-box button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 8px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .advanced-search-dropdown {
+            position: relative;
+            margin-left: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+        
+        /* 强制永久显示高级搜索图标 */
+        .advanced-search-icon,
+        .search-box .advanced-search-icon,
+        .header-right .search-box .advanced-search-icon,
+        #advancedSearchDropdown .advanced-search-icon {
+            font-size: 16px;
+            color: var(--secondary-color);
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            display: flex !important;
+            align-items: center;
+            visibility: visible !important; /* 强制始终可见 */
+            opacity: 1 !important; /* 强制始终不透明 */
+        }
+        
+        /* 移除所有可能的悬浮条件 */
+        .search-box:hover .advanced-search-icon {
+            color: var(--primary-color);
+        }
+        
+        .advanced-search-dropdown.active .advanced-search-icon {
+            color: var(--primary-color);
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        .advanced-search-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .advanced-search-modal.active {
+            display: flex;
+        }
+        
+        .advanced-search-content {
+            background-color: white;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 800px;
+            padding: 24px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+        
+        .advanced-search-content h3 {
+            margin-top: 0;
+            margin-bottom: 16px;
+            color: var(--text-color);
+            font-size: 18px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+        }
+        
+        .advanced-search-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: var(--secondary-color);
+            cursor: pointer;
+        }
+        
+        .advanced-search-close:hover {
+            color: var(--primary-color);
+        }
+        
+        .search-form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .date-range {
+            display: grid;
+            grid-template-columns: 1fr 30px 1fr;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .date-range span {
+            text-align: center;
+            color: var(--secondary-color);
+        }
+        
+        .search-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 24px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 16px;
+        }
+        
+        .search-actions button {
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            margin-left: 12px;
+        }
+        
+        .btn-reset {
+            background-color: white;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+        }
+        
+        .btn-reset:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .btn-search {
+            background-color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+            color: white;
+        }
+        
+        .btn-search:hover {
+            background-color: #3070e0;
+        }
+        
+        /* 修复header-right布局 */
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .quick-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        /* 修改统计卡片图标颜色 */
+        .stat-cards {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .stat-card {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-card.active {
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        /* 待审批公文图标 - 蓝色 */
+        .stat-card[data-target="待审批列表.html"] .stat-icon {
+            background-color: rgba(64, 128, 255, 0.1);
+            color: #4080FF;
+        }
+        
+        /* 审批中公文图标 - 黄色 */
+        .stat-card[data-target="审批中列表.html"] .stat-icon {
+            background-color: rgba(255, 176, 32, 0.1);
+            color: #FFB020;
+        }
+        
+        /* 已结束公文图标 - 绿色 */
+        .stat-card[data-target="已结束列表.html"] .stat-icon {
+            background-color: rgba(46, 212, 122, 0.1);
+            color: #2ED47A;
+        }
+        
+        /* 已归档公文图标 - 紫色 */
+        .stat-card[data-target="已归档列表.html"] .stat-icon {
+            background-color: rgba(157, 102, 254, 0.1);
+            color: #9D66FE;
+        }
+        
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 16px;
+            font-size: 20px;
+        }
+        .top-bar {
+            margin-bottom: 16px;
+        }
+        /* 优化iframe框架容器样式，确保内容完全展示 */
+        .content-frame-container {
+            height: 750px; /* 使用视口高度减去头部和其他元素的高度 */
+            min-height: 600px; /* 设置最小高度，确保在小屏幕上也有足够空间 */
+            margin-bottom: 20px; /* 增加底部间距，确保翻页控件可见 */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* 防止出现滚动条导致页面跳动 */
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        /* 优化iframe样式，确保充分利用容器空间 */
+        #contentFrame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            overflow: hidden;
+            display: block;
+        }
+
+        /* 主内容区调整，确保有足够的空间 */
+        main {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: calc(100vh - 80px); /* 总高度减去头部高度 */
+        }
+
+        /* 调整页脚位置，防止遮挡内容 */
+        footer {
+            margin-top: auto;
+            padding-top: 16px;
+        }
+    </style>
+    <script src="script.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- 主内容区 -->
+        <div class="main-content-full">
+            <!-- 头部 -->
+            <header class="top-header">
+                <div class="header-left">
+                    <div class="logo">
+                        <svg width="32" height="32" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                            <style>
+                                .primary { fill: #4080FF; }
+                                .secondary { fill: #3060DD; }
+                            </style>
+                            <circle cx="60" cy="60" r="52" fill="#e6f4ff" />
+                            <path class="primary" d="M60 20 C37.909 20 20 37.909 20 60 C20 82.091 37.909 100 60 100 L60 80 C48.954 80 40 71.046 40 60 C40 48.954 48.954 40 60 40 L60 20 Z" />
+                            <path class="secondary" d="M80 60 C80 71.046 71.046 80 60 80 L60 100 C82.091 100 100 82.091 100 60 C100 37.909 82.091 20 60 20 L60 40 C71.046 40 80 48.954 80 60 Z" />
+                            <path class="primary" d="M60,40 L50,70 L70,70 Z" />
+                        </svg>
+                        <h2>公文审批系统</h2>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="搜索公文...">
+                        <button>搜索</button>
+                        <div class="advanced-search-dropdown" id="advancedSearchDropdown">
+                            <i class="fas fa-caret-down advanced-search-icon" style="visibility: visible !important; opacity: 1 !important; display: inline-block !important;"></i>
+                        </div>
+                    </div>
+                    <div class="quick-actions">
+                        <button class="btn-secondary"><i class="fas fa-cog"></i> 系统管理</button>
+                        <button class="btn-secondary"><i class="fas fa-book"></i> 用户手册</button>
+                    </div>
+                    <div class="user-info">
+                        <span class="avatar">
+                            <svg width="32" height="32" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="60" cy="60" r="60" fill="#e6f4ff"/>
+                                <circle cx="60" cy="45" r="20" fill="#4080FF"/>
+                                <path d="M60,75 C40,75 25,90 25,110 L95,110 C95,90 80,75 60,75 Z" fill="#4080FF"/>
+                            </svg>
+                        </span>
+                        <span class="username">易航科技</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- 高级搜索对话框 -->
+            <div class="advanced-search-modal" id="advancedSearchModal">
+                <div class="advanced-search-content">
+                    <h3>高级搜索</h3>
+                    <button class="advanced-search-close" id="advancedSearchClose">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <form id="advancedSearchForm">
+                        <div class="search-form-grid">
+                            <div class="form-group">
+                                <label for="docTitle">公文标题</label>
+                                <input type="text" id="docTitle" name="docTitle" placeholder="输入公文标题关键词">
+                            </div>
+                            <div class="form-group">
+                                <label for="docNumber">公文编号</label>
+                                <input type="text" id="docNumber" name="docNumber" placeholder="输入公文编号">
+                            </div>
+                            <div class="form-group">
+                                <label for="submitterSelector">呈报人</label>
+                                <div id="submitterSelector"></div>
+                                <input type="hidden" id="submitter" name="submitter">
+                            </div>
+                            <div class="form-group">
+                                <label for="departmentSelector">呈报单位</label>
+                                <div id="departmentSelector"></div>
+                                <input type="hidden" id="department" name="department">
+                            </div>
+                            <div class="form-group">
+                                <label for="docType">公文类型</label>
+                                <select id="docType" name="docType">
+                                    <option value="">请选择公文类型</option>
+                                    <option value="请示">请示</option>
+                                    <option value="报告">报告</option>
+                                    <option value="申请">申请</option>
+                                    <option value="总结">总结</option>
+                                    <option value="计划">计划</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="urgencyLevel">紧急程度</label>
+                                <select id="urgencyLevel" name="urgencyLevel">
+                                    <option value="">全部</option>
+                                    <option value="普通">普通</option>
+                                    <option value="急件">急件</option>
+                                    <option value="特急件">特急件</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="grid-column: span 2;">
+                                <label>呈报时间范围</label>
+                                <div class="date-range">
+                                    <input type="date" id="startDate" name="startDate">
+                                    <span>至</span>
+                                    <input type="date" id="endDate" name="endDate">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="search-actions">
+                            <button type="button" class="btn-reset" id="resetSearchForm">重置</button>
+                            <button type="submit" class="btn-search">搜索</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 主要内容 -->
+            <main>
+                <!-- 修改统计卡片，添加点击功能 -->
+                <div class="stat-cards">
+                    <div class="stat-card active" data-target="待审批列表.html">
+                        <div class="stat-icon"><i class="fas fa-clipboard-list"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-value">12</div>
+                            <div class="stat-label">待审批公文</div>
+                        </div>
+                    </div>
+                    <div class="stat-card" data-target="审批中列表.html">
+                        <div class="stat-icon"><i class="fas fa-hourglass-half"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-value">8</div>
+                            <div class="stat-label">审批中公文</div>
+                        </div>
+                    </div>
+                    <div class="stat-card" data-target="已结束列表.html">
+                        <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-value">45</div>
+                            <div class="stat-label">已结束公文</div>
+                        </div>
+                    </div>
+                    <div class="stat-card" data-target="已归档列表.html">
+                        <div class="stat-icon"><i class="fas fa-archive"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-value">128</div>
+                            <div class="stat-label">已归档公文</div>
+                        </div>
+                    </div>
+                </div>
+  <!-- 顶部栏 - 只保留公文呈报按钮 -->
+  <div class="top-bar">
+    <button class="btn-primary" onclick="window.open('公文呈报.html', '_blank')"><i class="fas fa-plus"></i> 公文呈报</button>
+</div>
+                <!-- 添加iframe框架代替原有的公文呈报行至版权所有行上方区域 -->
+                <div class="content-frame-container">
+                    <iframe id="contentFrame" name="contentFrame" src="待审批列表.html" frameborder="0"></iframe>
+                </div>
+
+                <!-- 页脚 -->
+                <footer>
+                    <div class="copyright">
+                        © 2023 XX公司. 版权所有.
+                    </div>
+                </footer>
+            </main>
+        </div>
+    </div>
+
+    <!-- 在script.js中添加点击统计卡片切换iframe内容的功能 -->
+    <script>
+    // 添加统计卡片点击事件
+    document.addEventListener('DOMContentLoaded', function() {
+        const statCards = document.querySelectorAll('.stat-card');
+        const contentFrame = document.getElementById('contentFrame');
+        
+        statCards.forEach(card => {
+            card.addEventListener('click', function() {
+                // 移除所有卡片的active类
+                statCards.forEach(c => c.classList.remove('active'));
+                
+                // 为当前点击的卡片添加active类
+                this.classList.add('active');
+                
+                // 获取目标页面URL并加载到iframe中
+                const targetPage = this.getAttribute('data-target');
+                contentFrame.src = targetPage;
+            });
+        });
+        
+        // 高级搜索对话框功能
+        const advancedSearchDropdown = document.getElementById('advancedSearchDropdown');
+        const advancedSearchModal = document.getElementById('advancedSearchModal');
+        const advancedSearchClose = document.getElementById('advancedSearchClose');
+        const resetSearchForm = document.getElementById('resetSearchForm');
+        const advancedSearchForm = document.getElementById('advancedSearchForm');
+        
+        // 点击下拉箭头图标显示高级搜索对话框
+        advancedSearchDropdown.addEventListener('click', function() {
+            advancedSearchModal.classList.add('active');
+            advancedSearchDropdown.classList.add('active');
+        });
+        
+        // 点击关闭按钮隐藏高级搜索对话框
+        advancedSearchClose.addEventListener('click', function() {
+            advancedSearchModal.classList.remove('active');
+            advancedSearchDropdown.classList.remove('active');
+        });
+        
+        // 点击对话框外部区域关闭对话框
+        advancedSearchModal.addEventListener('click', function(e) {
+            if (e.target === advancedSearchModal) {
+                advancedSearchModal.classList.remove('active');
+                advancedSearchDropdown.classList.remove('active');
+            }
+        });
+        
+        // 重置表单
+        resetSearchForm.addEventListener('click', function() {
+            advancedSearchForm.reset();
+            
+            // 清空呈报人选择和呈报单位选择
+            if (submitterSelector) {
+                submitterSelector.clearSelection();
+            }
+            
+            if (departmentSelector) {
+                departmentSelector.clearSelection();
+            }
+        });
+        
+        // 表单提交
+        advancedSearchForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // 收集表单数据
+            const formData = new FormData(advancedSearchForm);
+            const searchParams = {};
+            
+            for (let [key, value] of formData.entries()) {
+                if (value) {
+                    searchParams[key] = value;
+                }
+            }
+            
+            // 在控制台输出搜索参数（实际应用中会发送到服务器）
+            console.log('高级搜索参数:', searchParams);
+            
+            // 关闭对话框
+            advancedSearchModal.classList.remove('active');
+            advancedSearchDropdown.classList.remove('active');
+            
+            // TODO: 这里可以添加实际的搜索逻辑，如发送请求到服务器并处理结果
+
+        });
+    });
+    </script>
+    
+    <!-- 引入人员选择控件JS和机构选择控件JS -->
+    <script src="components/PersonnelSelector.js"></script>
+    <script src="components/OrganizationSelector.js"></script>
+    <script>
+        // 初始化人员选择控件和机构选择控件
+        document.addEventListener('DOMContentLoaded', function() {
+            // 在高级搜索表单中初始化控件
+            let submitterSelector = null;
+            let departmentSelector = null;
+            let isPersonnelInitialized = false;
+            let isOrgInitialized = false;
+            
+            // 当高级搜索对话框打开时初始化控件
+            document.getElementById('advancedSearchDropdown').addEventListener('click', function() {
+                // 延迟一下初始化，确保对话框已显示
+                setTimeout(function() {
+                    // 初始化呈报人选择控件（单选模式）
+                    if (!isPersonnelInitialized) {
+                        submitterSelector = new PersonnelSelector({
+                            containerId: 'submitterSelector',
+                            placeholder: '输入姓名搜索或点击按钮选择',
+                            multiple: false, // 单选模式
+                            onSelectionChange: function(selected) {
+                                const hiddenInput = document.getElementById('submitter');
+                                if (selected && selected.length > 0) {
+                                    hiddenInput.value = selected[0].name;
+                                } else {
+                                    hiddenInput.value = '';
+                                }
+                            }
+                        });
+                        isPersonnelInitialized = true;
+                    }
+                    
+                    // 初始化呈报单位选择控件（单选模式）
+                    if (!isOrgInitialized) {
+                        departmentSelector = new OrganizationSelector({
+                            containerId: 'departmentSelector',
+                            placeholder: '点击选择或输入关键字搜索',
+                            multiple: false, // 单选模式
+                            onSelectionChange: function(selected) {
+                                const hiddenInput = document.getElementById('department');
+                                if (selected && selected.length > 0) {
+                                    hiddenInput.value = selected[0].name;
+                                } else {
+                                    hiddenInput.value = '';
+                                }
+                            }
+                        });
+                        isOrgInitialized = true;
+                    }
+                    
+                    // 阻止人员选择控件和机构选择控件中的按钮点击事件冒泡导致表单提交
+                    const selectorBtns = document.querySelectorAll('#submitterSelector .personnel-selector-btn, #departmentSelector .org-selector-btn');
+                    selectorBtns.forEach(btn => {
+                        btn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                        });
+                    });
+                }, 100);
+            });
+            
+            // 修复人员选择对话框与高级搜索对话框的冲突
+            // 获取人员选择对话框元素
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.addedNodes.length) {
+                        const personnelDialog = document.getElementById('personnelSelectorDialog');
+                        if (personnelDialog) {
+                            // 修改人员选择对话框的z-index，确保它显示在高级搜索对话框之上
+                            personnelDialog.style.zIndex = '1100';
+                            
+                            // 确保点击人员选择对话框不会关闭高级搜索对话框
+                            personnelDialog.addEventListener('click', function(e) {
+                                e.stopPropagation();
+                            });
+                            
+                            // 获取对话框中的按钮并阻止事件冒泡
+                            const buttons = personnelDialog.querySelectorAll('button');
+                            buttons.forEach(function(btn) {
+                                btn.addEventListener('click', function(e) {
+                                    e.stopPropagation();
+                                });
+                            });
+                        }
+                    }
+                });
+            });
+            
+            // 监听body子元素变化，以便检测到人员选择对话框的添加
+            observer.observe(document.body, { childList: true });
+        });
+    </script>
+</body>
+</html> 

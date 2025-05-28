@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>审批中公文列表</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--background-color);
+            overflow: hidden;
+        }
+        
+        .frame-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 16px;
+            box-sizing: border-box;
+        }
+        
+        .top-bar {
+            margin-bottom: 16px;
+        }
+        
+        .list-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .doc-list {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed; /* 确保列宽固定 */
+        }
+        
+        .doc-list th, .doc-list td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        /* 为操作列增加专门的内边距 */
+        .doc-list td.actions {
+            padding: 8px 12px;
+        }
+        
+        /* 定义固定列宽 */
+        .doc-list th:first-child, .doc-list td:first-child {
+            width: 40px;
+            min-width: 40px;
+            padding: 10px 5px;
+            text-align: center;
+        }
+        
+        .doc-list th.narrow-column {
+            width: 70px; /* 序号列宽增加到70px */
+            min-width: 70px;
+            white-space: nowrap;
+        }
+        
+        .doc-list th.doc-number-column {
+            width: 130px;
+            min-width: 130px;
+        }
+        
+        .doc-list th.doc-title-column {
+            width: 500px; /* 标题列自适应 */
+            min-width: 250px;
+        }
+        
+        .doc-list th.reporter-column {
+            width: 90px;
+            min-width: 90px;
+        }
+        
+        .doc-list th.department-column {
+            width: 140px;
+            min-width: 140px;
+        }
+        
+        .doc-list th.approver-column {
+            width: 110px;
+            min-width: 110px;
+        }
+        
+        .doc-list th.deadline-column {
+            width: 140px;
+            min-width: 140px;
+        }
+        
+        .doc-list th.urgency-column {
+            width: 110px; /* 增加宽度，确保"特急件"完整显示 */
+            min-width: 110px;
+        }
+        
+        .doc-list th.actions-column {
+            width: 140px; /* 进一步增加操作列宽度 */
+            min-width: 140px;
+        }
+        
+        .doc-list .doc-title {
+            display: flex;
+            align-items: center;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .doc-list .doc-title .title-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+        }
+        
+        .doc-list .security-tag {
+            margin-left: 8px;
+            flex-shrink: 0;
+        }
+        
+        .bottom-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .pagination {
+            display: flex;
+            align-items: center;
+        }
+        
+        .pagination-controls {
+            display: flex;
+            margin-left: 16px;
+        }
+        
+        .pagination-controls button {
+            margin: 0 4px;
+            border: 1px solid var(--border-color);
+            background: white;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        
+        .pagination-controls button.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        /* 表头居中显示 */
+        .doc-list th {
+            text-align: center;
+            white-space: normal; /* 允许表头文字换行 */
+            height: 46px; /* 确保有足够的高度显示两行文字 */
+            vertical-align: middle;
+        }
+        
+        /* 表格单元格保持左对齐 */
+        .doc-list td {
+            text-align: left;
+        }
+        
+        /* 优化表头排序样式 */
+        th[data-sort] {
+            cursor: pointer;
+            position: relative;
+        }
+        
+        th[data-sort]:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        th[data-sort]::after {
+            content: "";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            margin-left: 5px;
+            display: inline-block;
+            width: 14px;
+        }
+        
+        th[data-sort="asc"]::after {
+            content: "\f0de"; /* 使用Font Awesome上箭头 */
+            color: var(--primary-color);
+        }
+        
+        th[data-sort="desc"]::after {
+            content: "\f0dd"; /* 使用Font Awesome下箭头 */
+            color: var(--primary-color);
+        }
+        
+        /* 移除紧急程度单元格的文本截断效果 */
+        .doc-list td .urgent,
+        .doc-list td .normal {
+            white-space: nowrap;
+            overflow: visible; /* 允许内容溢出而不截断 */
+            text-overflow: initial; /* 不使用省略号 */
+        }
+        
+        .workflow-arrow {
+            color: var(--primary-color);
+            font-size: 20px;
+            margin: 0 15px;
+        }
+        
+        /* 催办按钮样式 */
+        .btn-urge {
+            margin-left: 5px;
+        }
+        
+        /* 催办弹窗样式 */
+        .urge-dialog {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .urge-dialog-content {
+            background-color: white;
+            width: 500px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+        }
+        
+        .urge-dialog-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+            text-align: center;
+        }
+        
+        .urge-dialog-header h3 {
+            margin: 0;
+            color: var(--text-color);
+            font-size: 18px;
+            font-weight: 500;
+        }
+        
+        .urge-dialog-body {
+            padding: 20px;
+        }
+        
+        .urge-form-group {
+            margin-bottom: 16px;
+        }
+        
+        .urge-form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: var(--text-color);
+        }
+        
+        .urge-form-group .user-select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+            color: var(--text-color);
+        }
+        
+        /* 用户选择输入框组样式 */
+        .user-input-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .user-input-group input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+            color: var(--text-color);
+        }
+        
+        .user-input-group .btn-select {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: #f5f5f5;
+            color: var(--text-color);
+            cursor: pointer;
+            white-space: nowrap;
+            font-size: 14px;
+        }
+        
+        .user-input-group .btn-select:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+        
+        .urge-form-group textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            resize: vertical;
+            font-size: 14px;
+            color: var(--text-color);
+        }
+        
+        .urge-form-group .checkbox-group {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .urge-form-group .checkbox-item {
+            display: flex;
+            align-items: center;
+        }
+        
+        .urge-form-group .checkbox-item input {
+            margin-right: 5px;
+        }
+        
+        .urge-dialog-footer {
+            padding: 16px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        
+        .urge-dialog-footer .btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s;
+        }
+        
+        .urge-dialog-footer .btn-default {
+            background-color: white;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+        }
+        
+        .urge-dialog-footer .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .urge-dialog-footer .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+        
+        .urge-dialog-footer .btn-default:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+        
+        /* 操作列按钮样式调整 */
+        .doc-list .actions {
+            display: flex;
+            justify-content: center;
+            gap: 8px; /* 增加按钮间距 */
+            padding: 4px;
+        }
+        
+        .doc-list .actions a {
+            padding: 5px 8px; /* 调整内边距 */
+            font-size: 13px; /* 微调字体大小 */
+            border-radius: 4px;
+            text-align: center;
+            white-space: nowrap;
+            text-decoration: none;
+            flex: 0 0 auto; /* 不使用flex拉伸 */
+            min-width: 42px; /* 确保最小宽度略微增加 */
+            max-width: 48px; /* 限制最大宽度略微增加 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+        
+        .btn-review,
+        .btn-urge {
+            display: inline-block;
+        }
+        
+        .btn-review.primary,
+        .btn-urge.primary {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .btn-review.primary:hover,
+        .btn-urge.primary:hover {
+            background-color: var(--primary-hover);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+            transform: translateY(-1px);
+        }
+        
+        /* 为按钮添加一个激活状态 */
+        .btn-review.primary:active,
+        .btn-urge.primary:active {
+            transform: translateY(1px);
+            box-shadow: 0 0px 1px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* 用户选择弹窗样式 */
+        .user-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            margin-top: 8px;
+        }
+        
+        .user-item {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .user-item:last-child {
+            border-bottom: none;
+        }
+        
+        .user-item:hover {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+        
+        .user-item.selected {
+            background-color: rgba(24, 144, 255, 0.1);
+        }
+        
+        .user-item input[type="checkbox"] {
+            margin-right: 8px;
+        }
+        
+        .user-item-name {
+            flex: 1;
+        }
+        
+        .user-item-dept {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="frame-container">
+ 
+
+        <!-- 文档列表容器 -->
+        <div class="list-container">
+            <table class="doc-list">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="select-all" class="select-all"></th>
+                        <th class="narrow-column" data-sort>序号</th>
+                        <th class="doc-title-column" data-sort>公文标题</th>
+                        <th class="doc-type-column" data-sort>公文类型</th>
+                        <th class="reporter-column" data-sort>呈报人</th>
+                        <th class="department-column" data-sort>呈报单位</th>
+                        <th class="approver-column" data-sort>当前审批人</th>
+                        <th class="deadline-column" data-sort>审核时限</th>
+                        <th class="urgency-column" data-sort>紧急程度</th>
+                        <th class="actions-column">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>1</td>
+                        <td class="doc-title-column">
+                            <span class="title-text">关于张明休假的请示</span>
+                      
+                        </td>
+                        <td>休假申请单</td>
+                        <td><span class="user-tag"><i class="fas fa-user"></i> 张明</span></td>
+                        <td>XX公司信息技术部</td>
+                        <td><span class="user-tag"><i class="fas fa-user"></i> 陈志强</span></td>
+                        <td class="deadline urgent-deadline">2025-04-18 18:00</td>
+                        <td><span class="urgent"><i class="fas fa-exclamation-circle"></i> 特急件</span></td>
+                        <td class="actions" style="height: 50px;">
+                            <a href="公文跟踪详情.html" target="_blank" class="btn-review primary">查看</a>
+                            <a href="#" class="btn-urge primary" onclick="showUrgeDialog(this); return false;">催办</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>2</td>
+                        <td class="doc-title-column">
+                            <span class="title-text">关于组织年度员工培训与职业发展规划实施方案的报告</span>
+                            <div class="security-tag normal" data-serial="23456789012345"></div>
+                        </td>
+                        <td>发文稿纸</td>
+                        <td><span class="user-tag"><i class="fas fa-user"></i> 李华</span></td>
+                        <td>XX公司信息技术部</td>
+                        <td><span class="user-tag"><i class="fas fa-user"></i> 王丽娜</span></td>
+                        <td class="deadline">2025-04-20 18:00</td>
+                        <td><span class="normal"><i class="fas fa-circle"></i> 普通</span></td>
+                        <td class="actions" style="height: 50px;">
+                            <a href="#" class="btn-review primary">查看</a>
+                            <a href="#" class="btn-urge primary" onclick="showUrgeDialog(this); return false;">催办</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>3</td>
+                        <td class="doc-title-column">
+                            <span class="title-text">关于新产品研发立项及关键技术突破项目申请</span>
+                            <div class="security-tag critical" data-serial="34567890123456"></div>
+                        </td>
+                        <td>呈批单</td>
+                        <td><span class="user-tag"><i class="fas fa-user"></i> 王强</span></td>
+                        <td>XX公司信息技术部</td>
+                        <td><span class="user-tag"><i class="fas fa-user"></i> 刘建国</span></td>
+                        <td class="deadline urgent-deadline">2025-04-19 12:00</td>
+                        <td><span class="urgent"><i class="fas fa-exclamation-circle"></i> 急件</span></td>
+                        <td class="actions" style="height: 50px;">
+                            <a href="#" class="btn-review primary">查看</a>
+                            <a href="#" class="btn-urge primary" onclick="showUrgeDialog(this); return false;">催办</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>4</td>
+                        <td class="doc-title-column">
+                            <span class="title-text">2025年第二季度销售业绩汇报及下半年市场策略分析</span>
+                            <div class="security-tag important" data-serial="45678901234567"></div>
+                        </td>
+                        <td>报告</td>
+                        <td><span class="user-tag"><i class="fas fa-user"></i> 刘芳</span></td>
+                        <td>XX公司信息技术部</td>
+                        <td><span class="user-tag"><i class="fas fa-user"></i> 赵文杰</span></td>
+                        <td class="deadline">2025-04-21 18:00</td>
+                        <td><span class="normal"><i class="fas fa-circle"></i> 普通</span></td>
+                        <td class="actions" style="height: 50px;">
+                            <a href="#" class="btn-review primary">查看</a>
+                            <a href="#" class="btn-urge primary" onclick="showUrgeDialog(this); return false;">催办</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>5</td>
+                        <td class="doc-title-column">
+                            <span class="title-text">办公设备更新采购计划及预算评估报告</span>
+                        </td>
+                        <td>报告</td>
+                        <td><span class="user-tag"><i class="fas fa-user"></i> 周浩</span></td>
+                        <td>XX公司信息技术部</td>
+                        <td><span class="user-tag"><i class="fas fa-user"></i> 张雪梅</span></td>
+                        <td class="deadline">2025-04-22 18:00</td>
+                        <td><span class="normal"><i class="fas fa-circle"></i> 普通</span></td>
+                        <td class="actions" style="height: 50px;">
+                            <a href="#" class="btn-review primary">查看</a>
+                            <a href="#" class="btn-urge primary" onclick="showUrgeDialog(this); return false;">催办</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>6</td>
+                        <td class="doc-title-column">
+                            <span class="title-text">市场部第二季度营销活动策划及效果分析总结</span>
+                        </td>
+                        <td>总结报告</td>
+                        <td><span class="user-tag"><i class="fas fa-user"></i> 赵丽</span></td>
+                        <td>XX公司信息技术部</td>
+                        <td><span class="user-tag"><i class="fas fa-user"></i> 陈志强</span></td>
+                        <td class="deadline">2025-04-23 18:00</td>
+                        <td><span class="normal"><i class="fas fa-circle"></i> 普通</span></td>
+                        <td class="actions" style="height: 50px;">
+                            <a href="#" class="btn-review primary">查看</a>
+                            <a href="#" class="btn-urge primary" onclick="showUrgeDialog(this); return false;">催办</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>7</td>
+                        <td class="doc-title-column">
+                            <span class="title-text">关于合作伙伴年度评审报告及未来合作意向调查结果</span>
+                        </td>
+                        <td>调研报告</td>
+                        <td><span class="user-tag"><i class="fas fa-user"></i> 钱伟</span></td>
+                        <td>XX公司信息技术部</td>
+                        <td><span class="user-tag"><i class="fas fa-user"></i> 王丽娜</span></td>
+                        <td class="deadline">2025-04-24 18:00</td>
+                        <td><span class="normal"><i class="fas fa-circle"></i> 普通</span></td>
+                        <td class="actions" style="height: 50px;">
+                            <a href="#" class="btn-review primary">查看</a>
+                            <a href="#" class="btn-urge primary" onclick="showUrgeDialog(this); return false;">催办</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>8</td>
+                        <td class="doc-title-column">
+                            <span class="title-text">IT系统安全升级方案及风险评估分析报告</span>
+                        </td>
+                        <td>方案</td>
+                        <td><span class="user-tag"><i class="fas fa-user"></i> 孙杰</span></td>
+                        <td>XX公司信息技术部</td>
+                        <td><span class="user-tag"><i class="fas fa-user"></i> 林志明</span></td>
+                        <td class="deadline urgent-deadline">2025-04-21 12:00</td>
+                        <td><span class="urgent"><i class="fas fa-exclamation-circle"></i> 急件</span></td>
+                        <td class="actions" style="height: 50px;">
+                            <a href="#" class="btn-review primary">查看</a>
+                            <a href="#" class="btn-urge primary" onclick="showUrgeDialog(this); return false;">催办</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>9</td>
+                        <td class="doc-title-column">
+                            <span class="title-text">员工培训计划调整报告及人才梯队建设方案</span>
+                        </td>
+                        <td>方案</td>
+                        <td><span class="user-tag"><i class="fas fa-user"></i> 杨柳</span></td>
+                        <td>XX公司信息技术部</td>
+                        <td><span class="user-tag"><i class="fas fa-user"></i> 张雪梅</span></td>
+                        <td class="deadline">2025-04-25 18:00</td>
+                        <td><span class="normal"><i class="fas fa-circle"></i> 普通</span></td>
+                        <td class="actions" style="height: 50px;">
+                            <a href="#" class="btn-review primary">查看</a>
+                            <a href="#" class="btn-urge primary" onclick="showUrgeDialog(this); return false;">催办</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td>10</td>
+                        <td class="doc-title-column">
+                            <span class="title-text">客户满意度调查结果分析及服务改进建议方案</span>
+                        </td>
+                        <td>建议方案</td>
+                        <td><span class="user-tag"><i class="fas fa-user"></i> 郑明</span></td>
+                        <td>XX公司信息技术部</td>
+                        <td><span class="user-tag"><i class="fas fa-user"></i> 王建国</span></td>
+                        <td class="deadline">2025-04-26 18:00</td>
+                        <td><span class="normal"><i class="fas fa-circle"></i> 普通</span></td>
+                        <td class="actions" style="height: 50px;">
+                            <a href="#" class="btn-review primary">查看</a>
+                            <a href="#" class="btn-urge primary" onclick="showUrgeDialog(this); return false;">催办</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 底部栏 - 批量操作和分页 -->
+        <div class="bottom-bar">
+            <div class="batch-actions">
+                <button class="btn-secondary"><i class="fas fa-print"></i> 批量打印</button>
+            </div>
+            <div class="pagination">
+                <span>第1页，共3页，共30条记录</span>
+                <div class="pagination-controls">
+                    <button><i class="fas fa-angle-left"></i></button>
+                    <button class="active">1</button>
+                    <button>2</button>
+                    <button>3</button>
+                    <button><i class="fas fa-angle-right"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 催办弹窗 -->
+    <div class="urge-dialog" id="urgeDialog">
+        <div class="urge-dialog-content">
+            <div class="urge-dialog-header">
+                <h3>公文催办</h3>
+            </div>
+            <div class="urge-dialog-body">
+                <div class="urge-form-group">
+                    <label>收件人：</label>
+                    <div class="user-input-group">
+                        <input type="text" id="urgeRecipient" placeholder="请输入收件人">
+                        <button class="btn-select" onclick="showUserSelect('urgeRecipient')">选择</button>
+                    </div>
+                </div>
+                <div class="urge-form-group">
+                    <label>抄送人：</label>
+                    <div class="user-input-group">
+                        <input type="text" id="urgeCc" placeholder="请输入抄送人">
+                        <button class="btn-select" onclick="showUserSelect('urgeCc')">选择</button>
+                    </div>
+                </div>
+                <div class="urge-form-group">
+                    <label>催办内容：</label>
+                    <textarea id="urgeContent" placeholder="请输入催办内容"></textarea>
+                </div>
+                <div class="urge-form-group">
+                    <label>提醒方式：</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="urgeEmail" checked>
+                            <label for="urgeEmail">邮件</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="urgeSms">
+                            <label for="urgeSms">短信</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="urgeApp" checked>
+                            <label for="urgeApp">APP</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="urge-dialog-footer">
+                <button class="btn btn-default" onclick="closeUrgeDialog()">取消</button>
+                <button class="btn btn-primary" onclick="sendUrge()">发送</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加用户选择弹窗 -->
+    <div class="urge-dialog" id="userSelectDialog" style="display: none;">
+        <div class="urge-dialog-content" style="width: 400px;">
+            <div class="urge-dialog-header">
+                <h3>选择用户</h3>
+            </div>
+            <div class="urge-dialog-body">
+                <div class="urge-form-group">
+                    <input type="text" id="userSearchInput" placeholder="搜索用户" class="form-control">
+                </div>
+                <div class="user-list" id="userList">
+                    <!-- 用户列表将在这里动态渲染 -->
+                </div>
+            </div>
+            <div class="urge-dialog-footer">
+                <button class="btn btn-default" onclick="closeUserSelect()">取消</button>
+                <button class="btn btn-primary" onclick="confirmUserSelect()">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <!-- 添加排序功能的JavaScript -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 获取所有可排序的表头
+        const sortableHeaders = document.querySelectorAll('th[data-sort]');
+        
+        // 为每个可排序表头添加点击事件
+        sortableHeaders.forEach(header => {
+            header.addEventListener('click', function() {
+                // 清除其他表头的排序状态
+                sortableHeaders.forEach(h => {
+                    if (h !== header) {
+                        h.removeAttribute('data-sort');
+                        h.setAttribute('data-sort', '');
+                    }
+                });
+                
+                // 切换当前表头的排序状态
+                if (!this.getAttribute('data-sort') || this.getAttribute('data-sort') === '') {
+                    this.setAttribute('data-sort', 'asc');
+                } else if (this.getAttribute('data-sort') === 'asc') {
+                    this.setAttribute('data-sort', 'desc');
+                } else {
+                    this.setAttribute('data-sort', '');
+                }
+                
+                // 实际排序逻辑可以在这里添加
+                sortTable(header.cellIndex, header.getAttribute('data-sort'));
+            });
+        });
+        
+        // 表格排序函数
+        function sortTable(columnIndex, direction) {
+            if (direction === '') return; // 如果没有排序方向，不执行排序
+            
+            const table = document.querySelector('.doc-list');
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            // 排序行
+            rows.sort((a, b) => {
+                const aValue = a.cells[columnIndex].textContent.trim();
+                const bValue = b.cells[columnIndex].textContent.trim();
+                
+                if (direction === 'asc') {
+                    return aValue.localeCompare(bValue, 'zh-CN');
+                } else {
+                    return bValue.localeCompare(aValue, 'zh-CN');
+                }
+            });
+            
+            // 重新添加排序后的行
+            rows.forEach(row => tbody.appendChild(row));
+        }
+    });
+    
+    // 催办对话框功能
+    let currentRow = null;
+    
+    function showUrgeDialog(btn) {
+        currentRow = btn.closest('tr');
+        const urgeDialog = document.getElementById('urgeDialog');
+        
+        // 获取当前审批人作为默认收件人
+        const approver = currentRow.querySelector('td:nth-child(7)').textContent.trim();
+        const recipientInput = document.getElementById('urgeRecipient');
+        
+        // 设置默认收件人
+        recipientInput.value = approver;
+        
+        // 设置默认催办内容
+        const docTitle = currentRow.querySelector('.title-text').textContent;
+        const docNum = currentRow.querySelector('td:nth-child(3)').textContent;
+        document.getElementById('urgeContent').value = `请尽快审批《${docTitle}》(${docNum})文件，谢谢！`;
+        
+        // 显示对话框
+        urgeDialog.style.display = 'flex';
+    }
+    
+    function closeUrgeDialog() {
+        document.getElementById('urgeDialog').style.display = 'none';
+    }
+    
+    function sendUrge() {
+        // 获取表单数据
+        const recipient = document.getElementById('urgeRecipient').value;
+        
+        // 获取抄送人（多选）
+        const ccInput = document.getElementById('urgeCc').value;
+        const cc = ccInput.split(',').map(c => c.trim());
+        
+        const content = document.getElementById('urgeContent').value;
+        const useEmail = document.getElementById('urgeEmail').checked;
+        const useSms = document.getElementById('urgeSms').checked;
+        const useApp = document.getElementById('urgeApp').checked;
+        
+        // 验证必填字段
+        if (!recipient) {
+            alert('请输入收件人！');
+            return;
+        }
+        
+        if (!content) {
+            alert('请输入催办内容！');
+            return;
+        }
+        
+        // 收集提醒方式
+        const remindMethods = [];
+        if (useEmail) remindMethods.push('邮件');
+        if (useSms) remindMethods.push('短信');
+        if (useApp) remindMethods.push('APP');
+        
+        if (remindMethods.length === 0) {
+            alert('请至少选择一种提醒方式！');
+            return;
+        }
+        
+        // 模拟发送催办
+        console.log('催办信息：', {
+            recipient,
+            cc,
+            content,
+            remindMethods
+        });
+        
+        // 关闭对话框并提示
+        closeUrgeDialog();
+        alert('催办已发送！');
+    }
+    
+    // 用户选择功能
+    const users = [
+        { id: 1, name: '陈志强', department: '财务部' },
+        { id: 2, name: '王丽娜', department: '人力资源部' },
+        { id: 3, name: '刘建国', department: '市场部' },
+        { id: 4, name: '赵文杰', department: '技术部' },
+        { id: 5, name: '张雪梅', department: '客服部' },
+        { id: 6, name: '林志明', department: '行政部' },
+        { id: 7, name: '王建国', department: '研发部' },
+        { id: 8, name: '李华', department: '财务部' },
+        { id: 9, name: '王强', department: '技术部' },
+        { id: 10, name: '周明', department: '市场部' },
+        { id: 11, name: '赵勇', department: '销售部' },
+        { id: 12, name: '张伟', department: '研发部' }
+    ];
+    
+    let currentTargetInput = '';
+    let selectedUsers = [];
+    let isMultiSelect = false;
+    
+    function showUserSelect(targetInputId) {
+        currentTargetInput = targetInputId;
+        isMultiSelect = (targetInputId === 'urgeCc');
+        
+        // 获取当前输入框的值
+        const currentValue = document.getElementById(targetInputId).value;
+        selectedUsers = [];
+        
+        if (currentValue) {
+            const names = currentValue.split(',').map(name => name.trim());
+            names.forEach(name => {
+                const user = users.find(u => u.name === name);
+                if (user) {
+                    selectedUsers.push(user.id);
+                }
+            });
+        }
+        
+        // 渲染用户列表
+        renderUserList();
+        
+        // 显示用户选择弹窗
+        document.getElementById('userSelectDialog').style.display = 'flex';
+    }
+    
+    function renderUserList(filterText = '') {
+        const userList = document.getElementById('userList');
+        userList.innerHTML = '';
+        
+        // 过滤用户
+        const filteredUsers = filterText 
+            ? users.filter(user => 
+                user.name.toLowerCase().includes(filterText.toLowerCase()) || 
+                user.department.toLowerCase().includes(filterText.toLowerCase()))
+            : users;
+        
+        // 渲染用户列表
+        filteredUsers.forEach(user => {
+            const isSelected = selectedUsers.includes(user.id);
+            const userItem = document.createElement('div');
+            userItem.className = 'user-item' + (isSelected ? ' selected' : '');
+            userItem.innerHTML = `
+                <input type="checkbox" ${isSelected ? 'checked' : ''} ${!isMultiSelect ? 'style="display:none"' : ''}>
+                <div class="user-item-name">${user.name}</div>
+                <div class="user-item-dept">${user.department}</div>
+            `;
+            
+            userItem.onclick = function(e) {
+                if (e.target.tagName === 'INPUT') return;
+                
+                const checkbox = userItem.querySelector('input[type="checkbox"]');
+                if (isMultiSelect) {
+                    checkbox.checked = !checkbox.checked;
+                    if (checkbox.checked) {
+                        selectedUsers.push(user.id);
+                        userItem.classList.add('selected');
+                    } else {
+                        selectedUsers = selectedUsers.filter(id => id !== user.id);
+                        userItem.classList.remove('selected');
+                    }
+                } else {
+                    // 单选模式直接选择并确认
+                    selectedUsers = [user.id];
+                    confirmUserSelect();
+                }
+            };
+            
+            userItem.querySelector('input[type="checkbox"]').onclick = function(e) {
+                e.stopPropagation();
+                if (this.checked) {
+                    selectedUsers.push(user.id);
+                    userItem.classList.add('selected');
+                } else {
+                    selectedUsers = selectedUsers.filter(id => id !== user.id);
+                    userItem.classList.remove('selected');
+                }
+            };
+            
+            userList.appendChild(userItem);
+        });
+    }
+    
+    function closeUserSelect() {
+        document.getElementById('userSelectDialog').style.display = 'none';
+    }
+    
+    function confirmUserSelect() {
+        // 获取选择的用户名称
+        const selectedNames = selectedUsers.map(id => {
+            const user = users.find(u => u.id === id);
+            return user ? user.name : '';
+        }).filter(Boolean);
+        
+        // 设置到对应的输入框
+        document.getElementById(currentTargetInput).value = selectedNames.join(', ');
+        
+        // 关闭弹窗
+        closeUserSelect();
+    }
+    
+    // 添加搜索功能
+    document.getElementById('userSearchInput').addEventListener('input', function() {
+        renderUserList(this.value);
+    });
+    </script>
+</body>
+</html> 

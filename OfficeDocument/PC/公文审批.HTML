@@ -1,0 +1,1914 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>公文审批</title>
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"> -->
+    <!-- 添加人员选择控件样式 -->
+    <link rel="stylesheet" href="components/PersonnelSelector.css">
+    <style>
+        :root {
+            --primary-color: #1890ff;
+            --primary-hover: #40a9ff;
+            --text-color: #333333;
+            --text-secondary: #666666;
+            --border-color: #e8e8e8;
+            --background-color: #f5f5f5;
+            --success-color: #52c41a;
+            --warning-color: #faad14;
+            --danger-color: #ff4d4f;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--background-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .page-header {
+            width: 100%;
+            height:var(--header-height, 60px);
+            background-color: var(--primary-color);
+            color: white;
+            text-align: center;
+            padding: 15px 0;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .page-header h1 {
+            font-size: 28px;
+            margin: 0;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            width: 90%;
+            margin: 0 auto;
+            padding: 0 20px 40px;
+        }
+        
+        /* 上部分 - 申请单详情 */
+        .form-section {
+            background-color: white;
+            border-radius: 6px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .section-title {
+            font-size: 18px;
+            color: var(--primary-color);
+            margin: 0;
+        }
+        
+        .section-action {
+            color: var(--primary-color);
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .collapse-btn {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+            display: flex;
+        }
+        
+        .form-label {
+            width: 120px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            padding-right: 12px;
+            text-align: left;
+        }
+        
+        .form-value {
+            flex: 1;
+            font-size: 14px;
+            color: var(--text-color);
+            min-height: 20px;
+        }
+        
+        /* 折叠状态时仅显示标题和请示意见 */
+        .form-collapsed .form-content {
+            display: none;
+        }
+        
+        .form-collapsed .form-summary {
+            display: block;
+        }
+        
+        .form-summary {
+            display: none;
+            padding: 10px 0;
+        }
+        
+        /* 中部分 - 签批意见 */
+        .approval-section {
+            background-color: white;
+            border-radius: 6px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .approval-list {
+            margin-top: 15px;
+        }
+        
+        .approval-item {
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            position: relative;
+        }
+        
+        .approval-item:last-child {
+            border-bottom: none;
+        }
+        
+        .approval-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .approver-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .approver-name {
+            font-weight: 500;
+            color: var(--text-color);
+        }
+        
+        .approver-role {
+            font-size: 12px;
+            color: var(--text-secondary);
+            background-color: #f5f5f5;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+        
+        .approval-time {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        .approval-content {
+            padding: 10px 0;
+            color: var(--text-color);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .approval-status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        
+        .status-approved {
+            background-color: rgba(82, 196, 26, 0.1);
+            color: var(--success-color);
+        }
+        
+        .status-rejected {
+            background-color: rgba(255, 77, 79, 0.1);
+            color: var(--danger-color);
+        }
+        
+        /* 下部分 - 操作栏 */
+        .operation-section {
+            background-color: white;
+            border-radius: 6px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        
+        .operation-header {
+            margin-bottom: 20px;
+        }
+        
+        .approval-options {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .approval-option {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+        
+        .operation-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .btn-icon {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .common-opinions {
+            margin-bottom: 20px;
+        }
+        
+        .opinion-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .opinion-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .opinion-item {
+            padding: 5px 12px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+            color: var(--text-color);
+        }
+        
+        .opinion-item:hover {
+            background-color: rgba(24, 144, 255, 0.1);
+            color: var(--primary-color);
+        }
+        
+        .approval-textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 10px 12px;
+            font-size: 14px;
+            color: var(--text-color);
+            background-color: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            transition: all 0.3s;
+            box-sizing: border-box;
+            resize: vertical;
+            margin-bottom: 20px;
+        }
+        
+        .next-approvers {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+        
+        .next-approvers-title {
+            font-weight: 500;
+            color: var(--text-color);
+            margin-bottom: 10px;
+        }
+        
+        .approver-flow {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        
+        .approver-step {
+            display: flex;
+            align-items: center;
+        }
+        
+        .approver-node {
+            padding: 5px 10px;
+            background-color: white;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        
+        .flow-arrow {
+            margin: 0 5px;
+            color: var(--text-secondary);
+        }
+        
+        .submission-actions {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            padding: 10px 24px;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+        }
+        
+        .btn-default {
+            background-color: white;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+        
+        .btn-default:hover {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+        
+        /* 对话框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            width: 900px;
+            max-width: 95%;
+            animation: modalFadeIn 0.3s;
+            position: relative;
+        }
+        
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .modal-header {
+            padding: 18px 24px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid var(--border-color);
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-color);
+            margin: 0;
+        }
+        
+        .modal-close {
+            font-size: 22px;
+            color: #999;
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: color 0.2s;
+            padding: 0;
+            line-height: 1;
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            z-index: 10;
+        }
+        
+        .modal-close:hover {
+            color: var(--text-color);
+        }
+        
+        .modal-body {
+            padding: 24px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+            background-color: #f8f9fa;
+        }
+        
+        /* 表单样式 */
+        .form-group {
+            margin-bottom: 24px;
+            display: block;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 15px;
+            color: var(--text-color);
+            font-weight: 500;
+            width: 100%;
+        }
+        
+        .form-control-container {
+            width: 100%;
+            display: block;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 14px;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            transition: all 0.3s;
+            box-sizing: border-box;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+            outline: none;
+        }
+        
+        textarea.form-control {
+            min-height: 100px;
+            resize: vertical;
+            line-height: 1.5;
+        }
+        
+        /* 用户选择器样式 */
+        .user-selector {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-select {
+            padding: 8px 12px;
+            background-color: white;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .btn-select:hover {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .selected-users {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .user-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            background-color: rgba(24, 144, 255, 0.1);
+            border-radius: 4px;
+            font-size: 13px;
+            color: var(--primary-color);
+        }
+        
+        .user-tag .remove {
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        /* 单选按钮样式 */
+        .radio-group {
+            display: flex;
+            gap: 24px;
+        }
+        
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .radio-option input[type="radio"] {
+            margin: 0;
+            cursor: pointer;
+        }
+        
+        /* 用户列表样式 */
+        .user-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+        
+        .user-item {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .user-item:last-child {
+            border-bottom: none;
+        }
+        
+        .user-item:hover {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+        
+        .user-item.selected {
+            background-color: rgba(24, 144, 255, 0.05);
+        }
+        
+        .user-item-checkbox {
+            margin-right: 10px;
+        }
+        
+        .user-item-info {
+            flex: 1;
+        }
+        
+        .user-item-name {
+            font-size: 14px;
+            color: var(--text-color);
+        }
+        
+        .user-item-dept {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        
+        .search-box {
+            margin-bottom: 15px;
+        }
+        
+        /* 历史记录列表样式 */
+        .history-list-section {
+            margin-top: 30px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+        }
+        
+        .section-subtitle {
+            font-size: 16px;
+            color: var(--text-color);
+            margin-bottom: 16px;
+            font-weight: 500;
+        }
+        
+        .table-responsive {
+            overflow-x: auto;
+            margin-bottom: 15px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+        
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        
+        .history-table th,
+        .history-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+        
+        .history-table th {
+            background-color: #f2f3f5;
+            font-weight: 500;
+            color: var(--text-secondary);
+            border-bottom: 2px solid #e0e0e0;
+            white-space: nowrap;
+            font-size: 14px;
+        }
+        
+        .history-table tr:hover {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+        
+        .history-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            line-height: 1;
+        }
+        
+        .status-done {
+            background-color: rgba(82, 196, 26, 0.1);
+            color: var(--success-color);
+        }
+        
+        .status-pending {
+            background-color: rgba(250, 173, 20, 0.1);
+            color: var(--warning-color);
+        }
+        
+        .btn-delete {
+            color: var(--danger-color);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 5px 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .btn-delete:hover {
+            background-color: rgba(255, 77, 79, 0.05);
+        }
+        
+        /* 管理按钮样式 */
+        .btn-manage-opinion {
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 4px 10px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+        
+        .btn-manage-opinion:hover {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+            background-color: rgba(24, 144, 255, 0.05);
+        }
+        
+        /* 意见管理列表样式 */
+        .opinion-manage-list {
+            margin-bottom: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+        
+        .opinion-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .opinion-table th,
+        .opinion-table td {
+            padding: 10px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .opinion-table th {
+            background-color: #f2f3f5;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        
+        .opinion-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .opinion-table tr:hover {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+        
+        /* 添加意见表单样式 */
+        .add-opinion-form {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .opinion-input-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .opinion-input-group .form-control {
+            flex: 1;
+        }
+        
+        .opinion-input-group .btn {
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <!-- 页面标题放在最顶部 -->
+    <div class="page-header" style="height: 30px;">
+        <h2 style="margin: 0">公文审批</h2>
+    </div>
+    
+    <div class="container">
+        <!-- 上部分 - 休假申请单详情 -->
+        <div class="form-section" id="applicationDetails">
+            <div class="section-header">
+                <h2 class="section-title">休假申请单</h2>
+                <button class="collapse-btn" id="collapseBtn">
+                    <i class="fas fa-chevron-up"></i> 折叠
+                </button>
+            </div>
+            
+            <!-- 折叠时显示的摘要信息 -->
+            <div class="form-summary" id="formSummary">
+                <div class="form-group">
+                    <div class="form-label">公文标题：</div>
+                    <div class="form-value">张明的年休假申请</div>
+                </div>
+                <div class="form-group">
+                    <div class="form-label">请示意见：</div>
+                    <div class="form-value">因个人原因，申请2025-04-15至2025-04-19休年假5天，请领导审批。</div>
+                </div>
+            </div>
+            
+            <!-- 展开时显示的完整表单 -->
+            <div class="form-content" id="formContent">
+                <!-- 基本信息 -->
+                <div class="form-group" style="display: flex; flex-wrap: nowrap;">
+                    <div class="form-label" style="width: 80px; flex-shrink: 0;">公文标题：</div>
+                    <div class="form-value" style="width: 120px; margin-right: 30px;">张明的年休假申请</div>
+                </div>
+                <div class="form-group" style="display: flex; flex-wrap: nowrap;">
+                    <div class="form-label" style="width: 80px; flex-shrink: 0;">公文密级：</div>
+                    <div class="form-value" style="width: 120px; margin-right: 30px;">不涉密</div>
+                    <div class="form-label" style="width: 80px; flex-shrink: 0;">紧急程度：</div>
+                    <div class="form-value" style="width: 150px; margin-right: 30px;">平件</div>
+                    <div class="form-label" style="width: 80px; flex-shrink: 0;"></div>
+                    <div class="form-value" style="width: 150px;"></div>
+                </div>
+                <div class="form-group" style="display: flex; flex-wrap: nowrap;">
+                    <div class="form-label" style="width: 80px; flex-shrink: 0;">申请人：</div>
+                    <div class="form-value" style="width: 120px; margin-right: 30px;">张明</div>
+                    <div class="form-label" style="width: 80px; flex-shrink: 0;">部门：</div>
+                    <div class="form-value" style="width: 150px; margin-right: 30px;">信息技术部</div>
+                    <div class="form-label" style="width: 80px; flex-shrink: 0;">职位：</div>
+                    <div class="form-value" style="width: 150px;">软件工程师</div>
+                </div>
+             
+
+                <!-- 休假信息 -->
+                <div class="form-group" style="display: flex; flex-wrap: nowrap;">
+                    <div class="form-label" style="width: 80px; flex-shrink: 0;">休假类型：</div>
+                    <div class="form-value" style="width: 120px; margin-right: 30px;">年休假</div>
+                    <div class="form-label" style="width: 80px; flex-shrink: 0;">开始日期：</div>
+                    <div class="form-value" style="width: 150px; margin-right: 30px;">2025-04-15</div>
+                    <div class="form-label" style="width: 80px; flex-shrink: 0;">结束日期：</div>
+                    <div class="form-value" style="width: 150px;">2025-04-19</div>
+                </div>
+               
+                <div class="form-group" style="display: flex; flex-wrap: nowrap;">
+                    <div class="form-label" style="width: 80px; flex-shrink: 0;">休假天数：</div>
+                    <div class="form-value" style="width: 120px; margin-right: 30px;">5天</div>
+                    <div class="form-label" style="width: 80px; flex-shrink: 0;">休假事由：</div>
+                    <div class="form-value" style="width: 150px;; margin-right: 30px;">处理个人事务</div>
+                    <div class="form-label" style="width: 80px; flex-shrink: 0;"></div>
+                    <div class="form-value" style="width: 150px;"></div>
+                </div>
+                
+                <!-- 工作交接 -->
+                <div class="form-group">
+                    <div class="form-label">工作交接情况：</div>
+                    <div class="form-value">1. 系统维护工作交接张三<br>2. 日常数据备份交接李四<br>3. 客户问题响应交接王五</div>
+                </div>
+                   <!-- 请示意见 -->
+                   <div class="form-group">
+                    <div class="form-label">请示意见：</div>
+                    <div class="form-value">因个人原因，申请2025-04-15至2025-04-19休年假5天，请领导审批。</div>
+                </div>
+                <!-- 附件 -->
+                <div class="form-group">
+                    <div class="form-label">附件：</div>
+                    <div class="form-value">
+                        <div class="attached-files">
+                            <div class="file-item">
+                                <div class="file-name"><a href="#" class="file-action" style="color: #333333;"><i class="fas fa-file-pdf"></i> 休假证明.pdf</a></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="form-label">附加公文：</div>
+                    <div class="form-value">
+                        <div class="attached-files">
+                            <div class="file-item">
+                                <div class="file-name"><a href="#" class="file-action" style="color: #333333;"><i class="fas fa-file-pdf"></i>关于XXXX的附加公文</a></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 中部分 - 签批意见区域 -->
+        <div class="approval-section">
+            <div class="section-header">
+                <h2 class="section-title">签批意见</h2>
+            </div>
+            
+            <div class="approval-list">
+                <!-- 第一个审批人的意见 -->
+                <div class="approval-item">
+                    <div class="approval-header">
+                        <div class="approver-info">
+                            <span class="approver-name">王丽娜</span>
+                            <span class="approver-role">部门主管</span>
+                            <span class="approval-status status-approved">已同意</span>
+                        </div>
+                        <div class="approval-time">2025-04-11 09:30</div>
+                    </div>
+                    <div class="approval-content">
+                        申请人休假期间工作已安排妥当，同意休假申请。
+                    </div>
+                </div>
+                
+                <!-- 第二个审批人的意见 -->
+                <div class="approval-item">
+                    <div class="approval-header">
+                        <div class="approver-info">
+                            <span class="approver-name">张雪梅</span>
+                            <span class="approver-role">人力资源主管</span>
+                            <span class="approval-status status-approved">已同意</span>
+                        </div>
+                        <div class="approval-time">2025-04-11 14:15</div>
+                    </div>
+                    <div class="approval-content">
+                        经核实，申请人年休假余额充足，符合休假规定，同意申请。
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 下部分 - 操作栏 -->
+        <div class="operation-section">
+            <div class="operation-header">
+                <h2 class="section-title">审批操作</h2>
+            </div>
+             <!-- 操作按钮 -->
+            <div class="operation-actions">
+                <button class="btn btn-default btn-icon">
+                    <i class="fas fa-plus"></i> 加签
+                </button>
+                <button class="btn btn-default btn-icon">
+                    <i class="fas fa-share"></i> 转发
+                </button>
+                <button class="btn btn-default btn-icon">
+                    <i class="fas fa-comment-dots"></i> 意见征询
+                </button>
+            </div>
+            <!-- 审批选项 -->
+            <div class="approval-options">
+                <label class="approval-option">
+                    <input type="radio" name="approvalStatus" value="approve" checked>
+                    <span>同意</span>
+                </label>
+                <label class="approval-option">
+                    <input type="radio" name="approvalStatus" value="reject">
+                    <span>不同意</span>
+                </label>
+            </div>
+            
+           
+            
+            
+            
+            <!-- 审批意见输入框 -->
+            <textarea class="approval-textarea" placeholder="请输入审批意见..." style="margin-bottom: 0px;"></textarea>
+            <!-- 常用审批意见 -->
+            <div class="common-opinions">
+                <div class="opinion-header" style="display: flex; justify-content:flex-start; align-items:baseline;">
+                    <!-- <div class="form-label">常用审批意见：</div> -->
+                    <div class="opinion-list" id="opinionList">
+                    <div class="opinion-item">同意。</div>
+                    <div class="opinion-item">已阅，同意。</div>
+                    <div class="opinion-item">按规定办理。</div>
+                    <div class="opinion-item">请按流程处理。</div>
+                    <div class="opinion-item">内容合规，同意通过。</div>
+                </div>
+                    <button class="btn-manage-opinion" id="manageOpinionBtn" style="margin-left: 10px;">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+               
+            </div>
+            <!-- 下一步审批人 -->
+            <div class="next-approvers">
+                <div class="next-approvers-title">后续审批流程</div>
+                <div class="approver-flow">
+                    <div class="approver-step">
+                        <div class="approver-node">李建国（总经理）</div>
+                    </div>
+                    <div class="flow-arrow"><i class="fas fa-arrow-right"></i></div>
+                    
+                    <div class="approver-step">
+                        <div class="approver-node">归档</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 提交按钮 -->
+            <div class="submission-actions">
+                <button class="btn btn-default save">暂存意见</button>
+                <button class="btn btn-primary">提交意见</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 加签对话框 -->
+    <div class="modal" id="addSignerModal">
+        <div class="modal-content" style="width: 900px; max-width: 95%;">
+            <div class="modal-header">
+                <h3 class="modal-title">加签</h3>
+            </div>
+            <button class="modal-close" id="closeAddSignerModal">&times;</button>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">请选择加签人员：</label>
+                    <div class="form-control-container">
+                        <!-- 替换为人员选择控件容器 -->
+                        <div id="addSignerSelector"></div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">加签人签批后如何处理流程：</label>
+                    <div class="form-control-container">
+                        <div class="radio-group">
+                            <label class="radio-option">
+                                <input type="radio" name="addSignerProcess" value="backToMe">
+                                <span>回到我的节点</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="addSignerProcess" value="goToNext">
+                                <span>去往下一个节点</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">加签意见：</label>
+                    <div class="form-control-container">
+                        <textarea class="form-control" id="addSignerOpinion" placeholder="请输入加签意见..."></textarea>
+                    </div>
+                </div>
+                
+                <!-- 添加历史加签列表 -->
+                <div class="history-list-section">
+                    <h4 class="section-subtitle">历史加签记录</h4>
+                    <div class="table-responsive">
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th width="60px">序号</th>
+                                    <th width="250px">加签人</th>
+                                    <th width="200px">加签时间</th>
+                                    <th width="120px">处理状态</th>
+                                    <th width="80px">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="addSignerHistoryList">
+                                <!-- 历史记录将在JS中动态生成 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" id="cancelAddSigner">取消</button>
+                <button class="btn btn-primary" id="submitAddSigner">提交</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 转发对话框 -->
+    <div class="modal" id="forwardModal">
+        <div class="modal-content" style="width: 900px; max-width: 95%;">
+            <div class="modal-header">
+                <h3 class="modal-title">转发</h3>
+            </div>
+            <button class="modal-close" id="closeForwardModal">&times;</button>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">请选择转发人员：</label>
+                    <div class="form-control-container">
+                        <!-- 替换为人员选择控件容器 -->
+                        <div id="forwardSelector"></div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">是否需要转发人做意见：</label>
+                    <div class="form-control-container">
+                        <div class="radio-group">
+                            <label class="radio-option">
+                                <input type="radio" name="forwardNeedOpinion" value="yes">
+                                <span>是</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="forwardNeedOpinion" value="no">
+                                <span>否</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">转发意见：</label>
+                    <div class="form-control-container">
+                        <textarea class="form-control" id="forwardOpinion" placeholder="请输入转发意见..."></textarea>
+                    </div>
+                </div>
+                
+                <!-- 添加历史转发列表 -->
+                <div class="history-list-section">
+                    <h4 class="section-subtitle">历史转发记录</h4>
+                    <div class="table-responsive">
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th width="60px">序号</th>
+                                    <th width="250px">接收人</th>
+                                    <th width="200px">转发时间</th>
+                                    <th width="200px">阅读时间</th>
+                                    <th width="80px">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="forwardHistoryList">
+                                <!-- 历史记录将在JS中动态生成 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" id="cancelForward">取消</button>
+                <button class="btn btn-primary" id="submitForward">提交</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 意见征询对话框 -->
+    <div class="modal" id="consultModal">
+        <div class="modal-content" style="width: 900px; max-width: 95%;">
+            <div class="modal-header">
+                <h3 class="modal-title">意见征询</h3>
+            </div>
+            <button class="modal-close" id="closeConsultModal">&times;</button>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">请选择征询人员：</label>
+                    <div class="form-control-container">
+                        <!-- 替换为人员选择控件容器 -->
+                        <div id="consultSelector"></div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">征询人反馈的意见是否仅我可见：</label>
+                    <div class="form-control-container">
+                        <div class="radio-group">
+                            <label class="radio-option">
+                                <input type="radio" name="consultVisibility" value="onlyMe" checked>
+                                <span>是</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="consultVisibility" value="all">
+                                <span>否</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">征询说明：</label>
+                    <div class="form-control-container">
+                        <textarea class="form-control" id="consultDescription" placeholder="请输入征询说明..."></textarea>
+                    </div>
+                </div>
+                
+                <!-- 添加历史征询列表 -->
+                <div class="history-list-section">
+                    <h4 class="section-subtitle">历史征询记录</h4>
+                    <div class="table-responsive">
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th width="60px">序号</th>
+                                    <th width="250px">接收人</th>
+                                    <th width="200px">征询时间</th>
+                                    <th width="120px">反馈状态</th>
+                                    <th width="80px">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="consultHistoryList">
+                                <!-- 历史记录将在JS中动态生成 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" id="cancelConsult">取消</button>
+                <button class="btn btn-primary" id="submitConsult">提交</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 用户选择对话框 -->
+    <div class="modal" id="userSelectModal">
+        <div class="modal-content" style="width: 500px;">
+            <div class="modal-header">
+                <h3 class="modal-title">选择人员</h3>
+                <button class="modal-close" id="closeUserSelectModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="search-box">
+                    <input type="text" class="form-control" id="userSearchInput" placeholder="搜索人员...">
+                </div>
+                <div class="user-list" id="userList">
+                    <!-- 用户列表将在JS中动态生成 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" id="cancelUserSelect">取消</button>
+                <button class="btn btn-primary" id="confirmUserSelect">确定</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 常用意见管理对话框 -->
+    <div class="modal" id="opinionManageModal">
+        <div class="modal-content" style="width: 600px; max-width: 95%;">
+            <div class="modal-header">
+                <h3 class="modal-title">管理常用审批意见</h3>
+            </div>
+            <button class="modal-close" id="closeOpinionManageModal">&times;</button>
+            <div class="modal-body">
+                <div class="opinion-manage-list">
+                    <table class="opinion-table">
+                        <thead>
+                            <tr>
+                                <th width="80%">意见内容</th>
+                                <th width="20%">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="opinionManageList">
+                            <!-- 意见列表将在JS中动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="add-opinion-form">
+                    <h4 class="section-subtitle">添加新意见</h4>
+                    <div class="form-group">
+                        <div class="opinion-input-group">
+                            <input type="text" class="form-control" id="newOpinionInput" placeholder="输入新的常用意见...">
+                            <button class="btn btn-primary" id="addNewOpinionBtn">添加</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="saveOpinionChanges">确定</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 引入人员选择控件JS -->
+    <script src="components/PersonnelSelector.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 模拟用户数据
+            const users = [
+                { id: 1, name: '张三', account: 'zhangsan', department: '信息技术部' },
+                { id: 2, name: '李四', account: 'lisi', department: '人力资源部' },
+                { id: 3, name: '王五', account: 'wangwu', department: '财务部' },
+                { id: 4, name: '赵六', account: 'zhaoliu', department: '市场部' },
+                { id: 5, name: '钱七', account: 'qianqi', department: '销售部' },
+                { id: 6, name: '孙八', account: 'sunba', department: '研发部' },
+                { id: 7, name: '周九', account: 'zhoujiu', department: '客服部' },
+                { id: 8, name: '吴十', account: 'wushi', department: '行政部' }
+            ];
+            
+            // 模拟历史加签记录
+            const addSignerHistory = [
+                { id: 1, userId: 3, addTime: '2025-06-15 09:23', status: '已处理' },
+                { id: 2, userId: 5, addTime: '2025-06-14 14:35', status: '已处理' },
+                { id: 3, userId: 2, addTime: '2025-06-12 11:05', status: '未处理' }
+            ];
+            
+            // 模拟历史转发记录
+            const forwardHistory = [
+                { id: 1, userId: 1, forwardTime: '2025-06-15 10:30', readTime: '2025-06-15 11:20' },
+                { id: 2, userId: 4, forwardTime: '2025-06-14 16:45', readTime: '2025-06-14 17:30' },
+                { id: 3, userId: 6, forwardTime: '2025-06-13 09:15', readTime: '未阅读' }
+            ];
+            
+            // 模拟历史征询记录
+            const consultHistory = [
+                { id: 1, userId: 2, consultTime: '2025-06-15 15:40', feedbackStatus: '已反馈' },
+                { id: 2, userId: 7, consultTime: '2025-06-14 11:20', feedbackStatus: '已反馈' },
+                { id: 3, userId: 8, consultTime: '2025-06-13 14:25', feedbackStatus: '未反馈' }
+            ];
+            
+            // 常用审批意见数据
+            let commonOpinions = [
+                '同意。',
+                '已阅，同意。',
+                '按规定办理。',
+                '请按流程处理。',
+                '内容合规，同意通过。'
+            ];
+            
+            // 初始化人员选择控件
+            let addSignerSelector = null;
+            let forwardSelector = null;
+            let consultSelector = null;
+            
+            // 获取相关元素
+            const collapseBtn = document.getElementById('collapseBtn');
+            const applicationDetails = document.getElementById('applicationDetails');
+            const formContent = document.getElementById('formContent');
+            const formSummary = document.getElementById('formSummary');
+            
+            // 常用意见管理相关元素
+            const manageOpinionBtn = document.getElementById('manageOpinionBtn');
+            const opinionManageModal = document.getElementById('opinionManageModal');
+            const closeOpinionManageModal = document.getElementById('closeOpinionManageModal');
+            const opinionManageList = document.getElementById('opinionManageList');
+            const newOpinionInput = document.getElementById('newOpinionInput');
+            const addNewOpinionBtn = document.getElementById('addNewOpinionBtn');
+            const saveOpinionChanges = document.getElementById('saveOpinionChanges');
+            const opinionList = document.getElementById('opinionList');
+            
+            // 渲染常用意见列表
+            function renderOpinionList() {
+                opinionList.innerHTML = '';
+                
+                commonOpinions.forEach(opinion => {
+                    const item = document.createElement('div');
+                    item.className = 'opinion-item';
+                    item.textContent = opinion;
+                    item.addEventListener('click', function() {
+                        approvalTextarea.value = this.textContent;
+                    });
+                    
+                    opinionList.appendChild(item);
+                });
+            }
+            
+            // 渲染常用意见管理列表
+            function renderOpinionManageList() {
+                opinionManageList.innerHTML = '';
+                
+                commonOpinions.forEach((opinion, index) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${opinion}</td>
+                        <td>
+                            <button class="btn-delete" data-index="${index}">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    `;
+                    
+                    opinionManageList.appendChild(tr);
+                });
+                
+                // 绑定删除按钮事件
+                opinionManageList.querySelectorAll('.btn-delete').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const index = parseInt(this.dataset.index);
+                        commonOpinions.splice(index, 1);
+                        renderOpinionManageList();
+                    });
+                });
+            }
+            
+            // 常用意见管理按钮点击事件
+            manageOpinionBtn.addEventListener('click', function() {
+                opinionManageModal.style.display = 'flex';
+                renderOpinionManageList();
+            });
+            
+            // 关闭常用意见管理对话框
+            closeOpinionManageModal.addEventListener('click', function() {
+                opinionManageModal.style.display = 'none';
+            });
+            
+            // 添加新意见按钮点击事件
+            addNewOpinionBtn.addEventListener('click', function() {
+                const newOpinion = newOpinionInput.value.trim();
+                
+                if (!newOpinion) {
+                    alert('请输入意见内容');
+                    return;
+                }
+                
+                if (commonOpinions.includes(newOpinion)) {
+                    alert('该意见已存在');
+                    return;
+                }
+                
+                commonOpinions.push(newOpinion);
+                renderOpinionManageList();
+                newOpinionInput.value = '';
+            });
+            
+            // 保存意见变更按钮点击事件
+            saveOpinionChanges.addEventListener('click', function() {
+                renderOpinionList();
+                opinionManageModal.style.display = 'none';
+            });
+            
+            // 处理折叠按钮点击事件
+            collapseBtn.addEventListener('click', function() {
+                const isCollapsed = applicationDetails.classList.toggle('form-collapsed');
+                
+                if (isCollapsed) {
+                    // 折叠状态
+                    collapseBtn.innerHTML = '<i class="fas fa-chevron-down"></i> 展开';
+                    formContent.style.display = 'none';
+                    formSummary.style.display = 'block';
+                } else {
+                    // 展开状态
+                    collapseBtn.innerHTML = '<i class="fas fa-chevron-up"></i> 折叠';
+                    formContent.style.display = 'block';
+                    formSummary.style.display = 'none';
+                }
+            });
+            
+            // 常用审批意见点击事件
+            const opinionItems = document.querySelectorAll('.opinion-item');
+            const approvalTextarea = document.querySelector('.approval-textarea');
+            
+            opinionItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    approvalTextarea.value = this.textContent;
+                });
+            });
+            
+            // 审批选项切换事件
+            const approvalOptions = document.querySelectorAll('input[name="approvalStatus"]');
+            
+            approvalOptions.forEach(option => {
+                option.addEventListener('change', function() {
+                    if (this.value === 'approve') {
+                        // 选择"同意"时的操作
+                        if (commonOpinions.length > 0) {
+                            approvalTextarea.value = commonOpinions[0];
+                        }
+                    } else if (this.value === 'reject') {
+                        // 选择"不同意"时的操作
+                        approvalTextarea.value = '不同意。';
+                        approvalTextarea.focus();
+                    }
+                });
+            });
+            
+            // 提交按钮事件
+            const submitBtn = document.querySelector('.btn-primary');
+            const saveBtn = document.querySelector('.save');
+            
+            submitBtn.addEventListener('click', function() {
+                const approvalStatus = document.querySelector('input[name="approvalStatus"]:checked').value;
+                const opinion = approvalTextarea.value.trim();
+                
+                if (!opinion) {
+                    alert('请输入审批意见');
+                    return;
+                }
+                
+                alert(`已${approvalStatus === 'approve' ? '同意' : '拒绝'}并提交审批意见`);
+                // 这里可以添加AJAX请求提交数据到服务器
+            });
+            
+            saveBtn.addEventListener('click', function() {
+                const opinion = approvalTextarea.value.trim();
+                
+                if (!opinion) {
+                    alert('请输入要暂存的审批意见');
+                    return;
+                }
+                
+                alert(`已暂存审批意见`);
+                // 这里可以添加AJAX请求将暂存数据提交到服务器
+            });
+
+            // === 对话框相关功能 ===
+            
+            // 加签按钮点击事件
+            const addSignerBtn = document.querySelector('.operation-actions .btn-icon:nth-child(1)');
+            const addSignerModal = document.getElementById('addSignerModal');
+            const closeAddSignerModal = document.getElementById('closeAddSignerModal');
+            const cancelAddSigner = document.getElementById('cancelAddSigner');
+            const submitAddSigner = document.getElementById('submitAddSigner');
+            const addSignerHistoryList = document.getElementById('addSignerHistoryList');
+            
+            // 渲染加签历史记录
+            function renderAddSignerHistory() {
+                addSignerHistoryList.innerHTML = '';
+                
+                addSignerHistory.forEach((item, index) => {
+                    const user = users.find(u => u.id === item.userId);
+                    if (!user) return;
+                    
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${user.name} (${user.account})</td>
+                        <td>${item.addTime}</td>
+                        <td>
+                            <span class="status-badge ${item.status === '已处理' ? 'status-done' : 'status-pending'}">
+                                ${item.status}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn-delete" data-id="${item.id}" data-type="addSigner">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    `;
+                    
+                    addSignerHistoryList.appendChild(tr);
+                });
+                
+                // 绑定删除按钮事件
+                addSignerHistoryList.querySelectorAll('.btn-delete').forEach(btn => {
+                    btn.addEventListener('click', handleDeleteHistoryItem);
+                });
+            }
+            
+            addSignerBtn.addEventListener('click', function() {
+                addSignerModal.style.display = 'flex';
+                
+                // 初始化人员选择控件（如果尚未初始化）
+                if (!addSignerSelector) {
+                    addSignerSelector = new PersonnelSelector({
+                        containerId: 'addSignerSelector',
+                        placeholder: '请选择加签人员',
+                        multiple: true,
+                        onSelectionChange: function(selected) {
+                            console.log('已选择的加签人员：', selected);
+                        }
+                    });
+                }
+                
+                // 渲染历史记录
+                renderAddSignerHistory();
+            });
+            
+            closeAddSignerModal.addEventListener('click', function() {
+                addSignerModal.style.display = 'none';
+            });
+            
+            cancelAddSigner.addEventListener('click', function() {
+                addSignerModal.style.display = 'none';
+            });
+            
+            submitAddSigner.addEventListener('click', function() {
+                const selectedPersonnel = addSignerSelector ? addSignerSelector.getSelectedPersonnel() : [];
+                const processOption = document.querySelector('input[name="addSignerProcess"]:checked');
+                const opinion = document.getElementById('addSignerOpinion').value.trim();
+                
+                if (selectedPersonnel.length === 0) {
+                    alert('请选择加签人员');
+                    return;
+                }
+                
+                if (!processOption) {
+                    alert('请选择加签人签批后如何处理流程');
+                    return;
+                }
+                
+                if (!opinion) {
+                    alert('请输入加签意见');
+                    return;
+                }
+                
+                // 获取选择的加签人员
+                const signers = selectedPersonnel.map(person => person.name);
+                
+                // 获取选择的流程处理方式
+                const processValue = processOption.value;
+                
+                alert(`已提交加签请求，加签人：${signers.join(', ')}，处理方式：${processValue === 'backToMe' ? '回到我的节点' : '去往下一个节点'}`);
+                
+                // 添加到历史记录中（实际应用中应由服务器返回）
+                if (selectedPersonnel.length > 0) {
+                    const now = new Date();
+                    const timeStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                    
+                    selectedPersonnel.forEach(person => {
+                        const newItem = {
+                            id: addSignerHistory.length + 1,
+                            userId: person.id,
+                            addTime: timeStr,
+                            status: '未处理'
+                        };
+                        
+                        addSignerHistory.unshift(newItem);
+                    });
+                    
+                    // 重新渲染历史记录
+                    renderAddSignerHistory();
+                }
+                
+                // 清空表单
+                document.getElementById('addSignerOpinion').value = '';
+                addSignerSelector.clearSelection();
+                
+                // 关闭对话框
+                addSignerModal.style.display = 'none';
+            });
+
+            // 转发按钮点击事件
+            const forwardBtn = document.querySelector('.operation-actions .btn-icon:nth-child(2)');
+            const forwardModal = document.getElementById('forwardModal');
+            const closeForwardModal = document.getElementById('closeForwardModal');
+            const cancelForward = document.getElementById('cancelForward');
+            const submitForward = document.getElementById('submitForward');
+            const forwardHistoryList = document.getElementById('forwardHistoryList');
+            
+            // 渲染转发历史记录
+            function renderForwardHistory() {
+                forwardHistoryList.innerHTML = '';
+                
+                forwardHistory.forEach((item, index) => {
+                    const user = users.find(u => u.id === item.userId);
+                    if (!user) return;
+                    
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${user.name} (${user.account})</td>
+                        <td>${item.forwardTime}</td>
+                        <td>
+                            <span class="${item.readTime !== '未阅读' ? '' : 'status-pending'}">
+                                ${item.readTime}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn-delete" data-id="${item.id}" data-type="forward">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    `;
+                    
+                    forwardHistoryList.appendChild(tr);
+                });
+                
+                // 绑定删除按钮事件
+                forwardHistoryList.querySelectorAll('.btn-delete').forEach(btn => {
+                    btn.addEventListener('click', handleDeleteHistoryItem);
+                });
+            }
+            
+            forwardBtn.addEventListener('click', function() {
+                forwardModal.style.display = 'flex';
+                
+                // 初始化人员选择控件（如果尚未初始化）
+                if (!forwardSelector) {
+                    forwardSelector = new PersonnelSelector({
+                        containerId: 'forwardSelector',
+                        placeholder: '请选择转发人员',
+                        multiple: true,
+                        onSelectionChange: function(selected) {
+                            console.log('已选择的转发人员：', selected);
+                        }
+                    });
+                }
+                
+                // 渲染历史记录
+                renderForwardHistory();
+            });
+            
+            closeForwardModal.addEventListener('click', function() {
+                forwardModal.style.display = 'none';
+            });
+            
+            cancelForward.addEventListener('click', function() {
+                forwardModal.style.display = 'none';
+            });
+            
+            submitForward.addEventListener('click', function() {
+                const selectedPersonnel = forwardSelector ? forwardSelector.getSelectedPersonnel() : [];
+                const needOpinionOption = document.querySelector('input[name="forwardNeedOpinion"]:checked');
+                const opinion = document.getElementById('forwardOpinion').value.trim();
+                
+                if (selectedPersonnel.length === 0) {
+                    alert('请选择转发人员');
+                    return;
+                }
+                
+                if (!needOpinionOption) {
+                    alert('请选择是否需要转发人做意见');
+                    return;
+                }
+                
+                if (!opinion) {
+                    alert('请输入转发意见');
+                    return;
+                }
+                
+                // 获取选择的转发人员
+                const forwardUsers = selectedPersonnel.map(person => person.name);
+                
+                // 获取是否需要转发人做意见
+                const needOpinion = needOpinionOption.value === 'yes';
+                
+                alert(`已提交转发请求，转发人：${forwardUsers.join(', ')}，需要做意见：${needOpinion ? '是' : '否'}`);
+                
+                // 添加到历史记录中（实际应用中应由服务器返回）
+                if (selectedPersonnel.length > 0) {
+                    const now = new Date();
+                    const timeStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                    
+                    selectedPersonnel.forEach(person => {
+                        const newItem = {
+                            id: forwardHistory.length + 1,
+                            userId: person.id,
+                            forwardTime: timeStr,
+                            readTime: '未阅读'
+                        };
+                        
+                        forwardHistory.unshift(newItem);
+                    });
+                    
+                    // 重新渲染历史记录
+                    renderForwardHistory();
+                }
+                
+                // 清空表单
+                document.getElementById('forwardOpinion').value = '';
+                forwardSelector.clearSelection();
+                
+                // 关闭对话框
+                forwardModal.style.display = 'none';
+            });
+
+            // 意见征询按钮点击事件
+            const consultBtn = document.querySelector('.operation-actions .btn-icon:nth-child(3)');
+            const consultModal = document.getElementById('consultModal');
+            const closeConsultModal = document.getElementById('closeConsultModal');
+            const cancelConsult = document.getElementById('cancelConsult');
+            const submitConsult = document.getElementById('submitConsult');
+            const consultHistoryList = document.getElementById('consultHistoryList');
+            
+            // 渲染征询历史记录
+            function renderConsultHistory() {
+                consultHistoryList.innerHTML = '';
+                
+                consultHistory.forEach((item, index) => {
+                    const user = users.find(u => u.id === item.userId);
+                    if (!user) return;
+                    
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${user.name} (${user.account})</td>
+                        <td>${item.consultTime}</td>
+                        <td>
+                            <span class="status-badge ${item.feedbackStatus === '已反馈' ? 'status-done' : 'status-pending'}">
+                                ${item.feedbackStatus}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn-delete" data-id="${item.id}" data-type="consult">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    `;
+                    
+                    consultHistoryList.appendChild(tr);
+                });
+                
+                // 绑定删除按钮事件
+                consultHistoryList.querySelectorAll('.btn-delete').forEach(btn => {
+                    btn.addEventListener('click', handleDeleteHistoryItem);
+                });
+            }
+            
+            consultBtn.addEventListener('click', function() {
+                consultModal.style.display = 'flex';
+                
+                // 初始化人员选择控件（如果尚未初始化）
+                if (!consultSelector) {
+                    consultSelector = new PersonnelSelector({
+                        containerId: 'consultSelector',
+                        placeholder: '请选择征询人员',
+                        multiple: true,
+                        onSelectionChange: function(selected) {
+                            console.log('已选择的征询人员：', selected);
+                        }
+                    });
+                }
+                
+                // 渲染历史记录
+                renderConsultHistory();
+            });
+            
+            closeConsultModal.addEventListener('click', function() {
+                consultModal.style.display = 'none';
+            });
+            
+            cancelConsult.addEventListener('click', function() {
+                consultModal.style.display = 'none';
+            });
+            
+            submitConsult.addEventListener('click', function() {
+                const selectedPersonnel = consultSelector ? consultSelector.getSelectedPersonnel() : [];
+                const visibilityOption = document.querySelector('input[name="consultVisibility"]:checked');
+                const description = document.getElementById('consultDescription').value.trim();
+                
+                if (selectedPersonnel.length === 0) {
+                    alert('请选择征询人员');
+                    return;
+                }
+                
+                if (!description) {
+                    alert('请输入征询说明');
+                    return;
+                }
+                
+                // 获取选择的征询人员
+                const consultUsers = selectedPersonnel.map(person => person.name);
+                
+                // 获取意见是否仅自己可见
+                const onlyMeVisible = visibilityOption.value === 'onlyMe';
+                
+                alert(`已提交意见征询请求，征询人：${consultUsers.join(', ')}，意见仅自己可见：${onlyMeVisible ? '是' : '否'}`);
+                
+                // 添加到历史记录中（实际应用中应由服务器返回）
+                if (selectedPersonnel.length > 0) {
+                    const now = new Date();
+                    const timeStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                    
+                    selectedPersonnel.forEach(person => {
+                        const newItem = {
+                            id: consultHistory.length + 1,
+                            userId: person.id,
+                            consultTime: timeStr,
+                            feedbackStatus: '未反馈'
+                        };
+                        
+                        consultHistory.unshift(newItem);
+                    });
+                    
+                    // 重新渲染历史记录
+                    renderConsultHistory();
+                }
+                
+                // 清空表单
+                document.getElementById('consultDescription').value = '';
+                consultSelector.clearSelection();
+                
+                // 关闭对话框
+                consultModal.style.display = 'none';
+            });
+            
+            // 处理删除历史记录项
+            function handleDeleteHistoryItem(e) {
+                const btn = e.currentTarget;
+                const id = parseInt(btn.dataset.id);
+                const type = btn.dataset.type;
+                
+                if (confirm('确定要删除此记录吗？')) {
+                    if (type === 'addSigner') {
+                        const index = addSignerHistory.findIndex(item => item.id === id);
+                        if (index !== -1) {
+                            addSignerHistory.splice(index, 1);
+                            renderAddSignerHistory();
+                        }
+                    } else if (type === 'forward') {
+                        const index = forwardHistory.findIndex(item => item.id === id);
+                        if (index !== -1) {
+                            forwardHistory.splice(index, 1);
+                            renderForwardHistory();
+                        }
+                    } else if (type === 'consult') {
+                        const index = consultHistory.findIndex(item => item.id === id);
+                        if (index !== -1) {
+                            consultHistory.splice(index, 1);
+                            renderConsultHistory();
+                        }
+                    }
+                }
+            }
+
+            // 点击模态框外部关闭模态框
+            window.addEventListener('click', function(event) {
+                if (event.target === addSignerModal) {
+                    addSignerModal.style.display = 'none';
+                }
+                if (event.target === forwardModal) {
+                    forwardModal.style.display = 'none';
+                }
+                if (event.target === consultModal) {
+                    consultModal.style.display = 'none';
+                }
+                if (event.target === opinionManageModal) {
+                    opinionManageModal.style.display = 'none';
+                }
+            });
+            
+            // 初始化常用意见列表
+            renderOpinionList();
+        });
+    </script>
+</body>
+</html> 
