@@ -1,0 +1,434 @@
+/**
+ * 人员选择控件样式
+ */
+
+/* 容器样式 */
+.personnel-selector {
+    display: flex;
+    width: 100%;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #fff;
+    min-height: 36px;
+    position: relative;
+}
+
+.personnel-selector:hover {
+    border-color: #1890ff;
+}
+
+.personnel-selector:focus-within {
+    border-color: #1890ff;
+    box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+/* 输入区域样式 */
+.personnel-input-area {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 2px 8px;
+    flex: 1;
+    min-width: 0;
+    position: relative;
+}
+
+/* 搜索输入框样式 */
+.personnel-search-input {
+    border: none;
+    outline: none;
+    flex: 1;
+    min-width: 50px;
+    height: 28px;
+    font-size: 14px;
+    color: #333;
+    background: transparent;
+}
+
+/* 已选标签容器 */
+.selected-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 2px 0;
+}
+
+/* 已选人员标签样式 */
+.personnel-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 8px;
+    height: 24px;
+    background-color: #f0f0f0;
+    border-radius: 2px;
+    font-size: 12px;
+    color: #333;
+    margin-right: 4px;
+    margin-bottom: 2px;
+    user-select: none;
+}
+
+.personnel-tag .tag-name {
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.personnel-tag .tag-remove {
+    margin-left: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #999;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.personnel-tag .tag-remove:hover {
+    color: #f5222d;
+}
+
+/* 选择按钮样式 */
+.personnel-selector-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    background-color: #f5f5f5;
+    border: none;
+    border-left: 1px solid #ddd;
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+    cursor: pointer;
+    color: #666;
+    font-size: 16px;
+    outline: none;
+    transition: background-color 0.3s;
+}
+
+.personnel-selector-btn:hover {
+    background-color: #e6f7ff;
+    color: #1890ff;
+}
+
+/* 下拉菜单样式 */
+.personnel-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    max-height: 300px;
+    overflow-y: auto;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    margin-top: 4px;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.dropdown-item:hover {
+    background-color: #f5f5f5;
+}
+
+.dropdown-item.selected {
+    background-color: #e6f7ff;
+}
+
+.dropdown-item .person-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.dropdown-item .person-name {
+    font-size: 14px;
+    color: #333;
+    font-weight: 500;
+}
+
+.dropdown-item .person-details {
+    font-size: 12px;
+    color: #666;
+    margin-top: 2px;
+}
+
+.dropdown-item .fas {
+    color: #1890ff;
+    font-size: 14px;
+}
+
+.no-results {
+    padding: 12px;
+    text-align: center;
+    color: #999;
+    font-size: 14px;
+}
+
+/* 选择对话框样式 */
+.personnel-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.personnel-dialog-content {
+    width: 800px;
+    max-width: 90%;
+    max-height: 80vh;
+    background-color: #fff;
+    border-radius: 6px;
+    box-shadow: 0 3px 6px -4px rgba(0, 0, 0, 0.12), 
+                0 6px 16px 0 rgba(0, 0, 0, 0.08), 
+                0 9px 28px 8px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+}
+
+.personnel-dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.personnel-dialog-header h3 {
+    margin: 0;
+    font-size: 16px;
+    color: #333;
+    font-weight: 500;
+}
+
+.personnel-dialog-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #999;
+    cursor: pointer;
+    outline: none;
+}
+
+.personnel-dialog-close:hover {
+    color: #666;
+}
+
+.personnel-dialog-body {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+.personnel-dialog-left {
+    width: 260px;
+    border-right: 1px solid #f0f0f0;
+    overflow-y: auto;
+    padding: 12px;
+    background-color: #f9f9f9;
+}
+
+.personnel-dialog-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.personnel-search-bar {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.personnel-name-search {
+    flex: 1;
+    height: 32px;
+    padding: 4px 11px;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px 0 0 4px;
+    outline: none;
+    font-size: 14px;
+}
+
+.personnel-name-search:focus {
+    border-color: #1890ff;
+    box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.personnel-search-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background-color: #1890ff;
+    border: none;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+    color: #fff;
+    outline: none;
+}
+
+.personnel-search-btn:hover {
+    background-color: #40a9ff;
+}
+
+.personnel-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+}
+
+.personnel-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+}
+
+.personnel-item:hover {
+    background-color: #f5f5f5;
+}
+
+.personnel-item.selected {
+    background-color: #e6f7ff;
+}
+
+.personnel-checkbox {
+    margin-right: 8px;
+}
+
+.personnel-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.personnel-name {
+    font-size: 14px;
+    color: #333;
+    font-weight: 500;
+}
+
+.personnel-details {
+    font-size: 12px;
+    color: #666;
+    margin-top: 2px;
+    word-break: break-all;
+}
+
+.personnel-dialog-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 12px 24px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.personnel-dialog-footer button {
+    height: 32px;
+    padding: 0 16px;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.3s;
+}
+
+.personnel-dialog-cancel {
+    margin-right: 8px;
+    background-color: #fff;
+    border: 1px solid #d9d9d9;
+    color: #333;
+}
+
+.personnel-dialog-cancel:hover {
+    color: #1890ff;
+    border-color: #1890ff;
+}
+
+.personnel-dialog-confirm {
+    background-color: #1890ff;
+    border: 1px solid #1890ff;
+    color: #fff;
+}
+
+.personnel-dialog-confirm:hover {
+    background-color: #40a9ff;
+    border-color: #40a9ff;
+}
+
+/* 部门树样式 */
+.department-node {
+    margin-bottom: 4px;
+}
+
+.department-name {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+}
+
+.department-name:hover {
+    background-color: #e6f7ff;
+}
+
+.department-name.selected {
+    background-color: #e6f7ff;
+    color: #1890ff;
+}
+
+.department-name i {
+    margin-right: 8px;
+    color: #1890ff;
+}
+
+.department-children {
+    margin-left: 20px;
+    padding-left: 8px;
+    border-left: 1px dashed #ccc;
+}
+
+.no-personnel {
+    padding: 20px;
+    text-align: center;
+    color: #999;
+    font-size: 14px;
+}
+
+/* 在高级搜索表单中的样式调整 */
+#submitterSelector {
+    width: 100%;
+    margin-bottom: 0;
+}
+
+#submitterSelector .personnel-selector {
+    width: 100%;
+}
+
+/* 阻止事件冒泡的样式 */
+.personnel-dialog * {
+    box-sizing: border-box;
+} 

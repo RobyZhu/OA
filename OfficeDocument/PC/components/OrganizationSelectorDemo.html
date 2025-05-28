@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>机构选择控件演示</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="OrganizationSelector.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.5;
+            color: #333;
+            background-color: #f0f2f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            padding: 24px;
+        }
+        
+        h1 {
+            font-size: 24px;
+            margin-bottom: 24px;
+            color: #1890ff;
+        }
+        
+        .demo-section {
+            margin-bottom: 32px;
+        }
+        
+        .demo-section h2 {
+            font-size: 18px;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .demo-section p {
+            margin-bottom: 16px;
+            color: #666;
+        }
+        
+        .demo-box {
+            margin-bottom: 24px;
+        }
+        
+        .demo-box h3 {
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        .form-item {
+            margin-bottom: 16px;
+        }
+        
+        .form-item .label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        .form-item .label .required {
+            color: #f5222d;
+            margin-right: 4px;
+        }
+        
+        .form-actions {
+            margin-top: 24px;
+            text-align: right;
+        }
+        
+        .btn {
+            height: 32px;
+            padding: 0 16px;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s;
+        }
+        
+        .btn-default {
+            background-color: #fff;
+            border: 1px solid #d9d9d9;
+            color: #333;
+        }
+        
+        .btn-default:hover {
+            color: #1890ff;
+            border-color: #1890ff;
+        }
+        
+        .btn-primary {
+            background-color: #1890ff;
+            border: 1px solid #1890ff;
+            color: #fff;
+            margin-left: 8px;
+        }
+        
+        .btn-primary:hover {
+            background-color: #40a9ff;
+            border-color: #40a9ff;
+        }
+        
+        .selection-info {
+            margin-top: 16px;
+            padding: 12px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            border: 1px solid #f0f0f0;
+        }
+        
+        .selection-info pre {
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-family: Consolas, Monaco, 'Andale Mono', monospace;
+            font-size: 13px;
+            color: #333;
+        }
+        
+        .code-block {
+            margin-top: 16px;
+            padding: 16px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            border: 1px solid #f0f0f0;
+            overflow-x: auto;
+        }
+        
+        .code-block pre {
+            margin: 0;
+            font-family: Consolas, Monaco, 'Andale Mono', monospace;
+            font-size: 13px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>机构选择控件演示</h1>
+        
+        <div class="demo-section">
+            <h2>基本用法</h2>
+            <p>机构选择控件支持单行文本输入框，点击后展示机构树，支持关键字过滤和多选功能。</p>
+            
+            <div class="demo-box">
+                <h3>多选模式（默认）</h3>
+                <div class="form-item">
+                    <label class="label"><span class="required">*</span>选择机构：</label>
+                    <div id="multiSelector"></div>
+                </div>
+                
+                <div class="selection-info">
+                    <h4>已选机构：</h4>
+                    <pre id="multiSelectionInfo">暂无选择</pre>
+                </div>
+                
+                <div class="form-actions">
+                    <button class="btn btn-default" id="multiClearBtn">清空选择</button>
+                    <button class="btn btn-primary" id="multiSubmitBtn">提交</button>
+                </div>
+            </div>
+            
+            <div class="demo-box">
+                <h3>单选模式</h3>
+                <div class="form-item">
+                    <label class="label">选择机构：</label>
+                    <div id="singleSelector"></div>
+                </div>
+                
+                <div class="selection-info">
+                    <h4>已选机构：</h4>
+                    <pre id="singleSelectionInfo">暂无选择</pre>
+                </div>
+                
+                <div class="form-actions">
+                    <button class="btn btn-default" id="singleClearBtn">清空选择</button>
+                    <button class="btn btn-primary" id="singleSubmitBtn">提交</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="demo-section">
+            <h2>使用说明</h2>
+            <p>机构选择控件是一个用于选择机构的通用组件，支持机构树展示、关键字过滤和多选功能。以下是基本使用方法：</p>
+            
+            <div class="code-block">
+                <pre>// 1. 引入CSS和JS文件
+&lt;link rel="stylesheet" href="OrganizationSelector.css"&gt;
+&lt;script src="OrganizationSelector.js"&gt;&lt;/script&gt;
+
+// 2. 创建一个容器元素
+&lt;div id="orgSelector"&gt;&lt;/div&gt;
+
+// 3. 初始化控件
+const selector = new OrganizationSelector({
+    containerId: 'orgSelector',     // 容器ID
+    selectedOrgs: [],               // 初始已选机构
+    onSelectionChange: function(selected) {
+        console.log('选择已更改:', selected);
+    },
+    placeholder: '请选择机构',      // 输入框占位文本
+    multiple: true,                 // 是否支持多选
+    required: false                 // 是否必填
+});
+
+// 4. 获取已选机构
+const selected = selector.getSelectedOrgs();
+
+// 5. 设置已选机构
+selector.setSelectedOrgs([
+    { id: 1, name: '总公司' }
+]);
+
+// 6. 清空选择
+selector.clearSelection();</pre>
+            </div>
+        </div>
+    </div>
+
+    <script src="OrganizationSelector.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 多选模式示例
+            const multiSelector = new OrganizationSelector({
+                containerId: 'multiSelector',
+                selectedOrgs: [
+                    { id: 1, name: '总公司', parentId: null, children: [] }
+                ],
+                onSelectionChange: function(selected) {
+                    const infoElement = document.getElementById('multiSelectionInfo');
+                    if (selected.length === 0) {
+                        infoElement.textContent = '暂无选择';
+                    } else {
+                        infoElement.textContent = JSON.stringify(selected.map(org => ({
+                            id: org.id,
+                            name: org.name
+                        })), null, 2);
+                    }
+                },
+                placeholder: '点击选择或输入关键字搜索',
+                multiple: true,
+                required: true
+            });
+            
+            // 单选模式示例
+            const singleSelector = new OrganizationSelector({
+                containerId: 'singleSelector',
+                onSelectionChange: function(selected) {
+                    const infoElement = document.getElementById('singleSelectionInfo');
+                    if (selected.length === 0) {
+                        infoElement.textContent = '暂无选择';
+                    } else {
+                        infoElement.textContent = JSON.stringify(selected.map(org => ({
+                            id: org.id,
+                            name: org.name
+                        })), null, 2);
+                    }
+                },
+                placeholder: '请选择一个机构',
+                multiple: false
+            });
+            
+            // 多选模式按钮事件
+            document.getElementById('multiClearBtn').addEventListener('click', function() {
+                multiSelector.clearSelection();
+            });
+            
+            document.getElementById('multiSubmitBtn').addEventListener('click', function() {
+                const selected = multiSelector.getSelectedOrgs();
+                if (selected.length === 0) {
+                    alert('请至少选择一个机构');
+                    return;
+                }
+                alert('已选择 ' + selected.length + ' 个机构');
+            });
+            
+            // 单选模式按钮事件
+            document.getElementById('singleClearBtn').addEventListener('click', function() {
+                singleSelector.clearSelection();
+            });
+            
+            document.getElementById('singleSubmitBtn').addEventListener('click', function() {
+                const selected = singleSelector.getSelectedOrgs();
+                if (selected.length === 0) {
+                    alert('请选择一个机构');
+                    return;
+                }
+                alert('已选择: ' + selected[0].name);
+            });
+        });
+    </script>
+</body>
+</html> 
